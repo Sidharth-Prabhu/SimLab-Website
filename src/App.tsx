@@ -146,8 +146,7 @@ const featureGroups = [
   },
 ]
 
-const individualLicenseInr = 799
-const individualLicenseUsd = 19.38
+const individualLicenseInr = 1843
 const web3FormsAccessKey = 'ecdab183-c7d4-4321-bd74-bb6a1a240387'
 const individualPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL as string | undefined
 const licenseIssueApiUrl = import.meta.env.VITE_LICENSE_ISSUE_API_URL as string | undefined
@@ -229,30 +228,12 @@ type IssuedLicense = {
 }
 
 const getRegionalPricing = () => {
-  const fallback = {
-    amount: `$${individualLicenseUsd.toFixed(2)}`,
+  return {
+    amount: `Rs ${individualLicenseInr}`,
     suffix: 'one-time license',
-    note: `Fixed international price. Visitors in India see Rs ${individualLicenseInr}.`,
-    isIndia: false,
+    note: 'Flat rate in INR for all customers worldwide.',
+    isIndia: true,
   }
-
-  if (typeof window === 'undefined') {
-    return fallback
-  }
-
-  const locale = navigator.language || 'en-US'
-  const region = new Intl.Locale(locale).maximize().region
-
-  if (region === 'IN') {
-    return {
-      amount: `Rs ${individualLicenseInr}`,
-      suffix: 'one-time license',
-      note: 'Displayed in INR for visitors in India.',
-      isIndia: true,
-    }
-  }
-
-  return fallback
 }
 
 
@@ -1284,9 +1265,14 @@ function App() {
               </ul>
             </div>
 
-            <a href="#contact" className="btn btn-primary" style={{ width: '100%' }}>
-              Contact Sales
-            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+              <a href="#contact" className="btn btn-primary" style={{ width: '100%', textAlign: 'center' }}>
+                Contact Sales
+              </a>
+              <a href="#contact" className="btn btn-outline" style={{ width: '100%', textAlign: 'center' }}>
+                Book a Demo
+              </a>
+            </div>
           </div>
         </div>
       </section>
