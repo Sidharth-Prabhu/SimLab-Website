@@ -151,73 +151,7 @@ const web3FormsAccessKey = 'ecdab183-c7d4-4321-bd74-bb6a1a240387'
 const individualPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL as string | undefined
 const licenseIssueApiUrl = import.meta.env.VITE_LICENSE_ISSUE_API_URL as string | undefined
 
-// RSA Constants for Client-Side License Generation
-const RSA_N = 0x650ae787da5f5cc4da86753f88a1bfdb540c7e9abd0fb633149b75658e974e5cc2e2d49e5e6a1e5150c1f491882ba8b74857861e88199d66a6078380ee8eb240470cf8e624fc654584618d0bc1ffb4570e5521c6c8226246dc1d01eccaace4c5f187d9ec3bea9082e10e2e3f6385986953cb388ff5c5ff63a439164069571badn
-const RSA_D = 0x38308932ee484bd198e85ef976e4e4497702ffc0d3549270f38bc40c36f0837e684e3608dfde497fd4d617487b1e3453c06213ce94c711d60c8c6f1fdb09f5abc00c7beb9df1fa763d94bb702b9a8b2f7ea9c28b21639e64523db42f2b227aff00d8974c442dadfaeec5ac2d8845843fc05146dd251298cf8222cbdda75e47c1n
-
-function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
-  if (modulus === 1n) return 0n;
-  let result = 1n;
-  base = base % modulus;
-  while (exponent > 0n) {
-    if (exponent % 2n === 1n) {
-      result = (result * base) % modulus;
-    }
-    exponent = exponent / 2n;
-    base = (base * base) % modulus;
-  }
-  return result;
-}
-
-async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function generateLicense(userName: string, email: string, expiryDays = 365) {
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + expiryDays);
-  const expiryStr = expiryDate.toISOString().split('T')[0];
-  
-  const data = {
-    user: userName,
-    email: email,
-    expiry: expiryStr,
-    tier: "Enterprise Pro"
-  };
-  
-  // Exact JSON serialization spacing and key ordering to match python's json.dumps(data, sort_keys=True)
-  const dataStr = `{"email": ${JSON.stringify(email)}, "expiry": ${JSON.stringify(expiryStr)}, "tier": "Enterprise Pro", "user": ${JSON.stringify(userName)}}`;
-  
-  const hashHex = await sha256(dataStr);
-  const h = BigInt('0x' + hashHex);
-  
-  const sig = modPow(h, RSA_D, RSA_N);
-  
-  // Format outer JSON exact alignment
-  const licenseJsonStr = `{"data": {"user": ${JSON.stringify(userName)}, "email": ${JSON.stringify(email)}, "expiry": ${JSON.stringify(expiryStr)}, "tier": "Enterprise Pro"}, "signature": ${JSON.stringify('0x' + sig.toString(16))}}`;
-  
-  const bytes = new TextEncoder().encode(licenseJsonStr);
-  let binString = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binString += String.fromCharCode(bytes[i]);
-  }
-  const encoded = btoa(binString);
-  
-  const activationKey = [
-    "---BEGIN ACTIVATION KEY---",
-    encoded,
-    "---END ACTIVATION KEY---"
-  ].join("\n");
-  
-  return {
-    activationKey,
-    data
-  };
-}
-
+// Client-side routing helper type
 type PurchaseView = 'landing' | 'purchase-success'
 
 type IssuedLicense = {
@@ -384,18 +318,39 @@ function App() {
       setLicenseError('Name and Email are required to generate your license.')
       return
     }
+    if (!paymentId) {
+      setLicenseError('Payment reference is missing. Please enter your Payment ID.')
+      return
+    }
     setLicenseLoading(true)
     setLicenseError('')
     try {
-      const { activationKey, data } = await generateLicense(buyerName.trim(), buyerEmail.trim())
+      const response = await fetch('/.netlify/functions/verify-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentId: paymentId.trim(),
+          name: buyerName.trim(),
+          email: buyerEmail.trim(),
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to verify payment and generate license.')
+      }
+
       setIssuedLicense({
-        licenseKey: activationKey,
-        user: data.user,
-        email: data.email,
-        expiry: data.expiry
+        licenseKey: result.licenseKey,
+        user: result.data.user,
+        email: result.data.email,
+        expiry: result.data.expiry
       })
     } catch (err) {
-      setLicenseError('Failed to generate license key. Please check your inputs.')
+      setLicenseError(err instanceof Error ? err.message : 'Failed to verify payment. Please check your Payment ID and credentials.')
     } finally {
       setLicenseLoading(false)
     }
