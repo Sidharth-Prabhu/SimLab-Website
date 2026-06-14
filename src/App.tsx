@@ -3,27 +3,274 @@ import {
   Activity, 
   Shield, 
   Cpu, 
-  Layers, 
+  Globe, 
   Check, 
   Copy, 
   Download, 
   Mail, 
   ExternalLink, 
   X, 
-  HelpCircle,
-  BookOpen,
-  Server
+  Server,
+  Workflow,
+  Send,
+  Radio,
+  KeyRound,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle
 } from 'lucide-react'
 import simlabLogo from './assets/simlab.png'
 import frisscoSimlabLogo from './assets/frissco_simlab.png'
+import heroImage from './assets/hero.png'
 import './App.css'
 
+const featureGroups = [
+  {
+    title: 'Interactive Topology Canvas Editor',
+    icon: Globe,
+    eyebrow: 'Design Workspace',
+    visualLabel: 'Canvas Studio',
+    accent: 'lavender',
+    points: [
+      'Responsive vector canvas for physical and logical network design.',
+      'Router, host, and switch palette with configurable interfaces and subnet allocations.',
+      'Custom link properties for bandwidth, link cost, and propagation delay.',
+      'Drag-and-drop placement, align-to-grid, zoom, pan, and quick rename or subnet editing.',
+    ],
+  },
+  {
+    title: 'Visual Routing Protocols Simulator',
+    icon: Workflow,
+    eyebrow: 'Routing Intelligence',
+    visualLabel: 'Protocol Replay',
+    accent: 'blue',
+    points: [
+      'Step-by-step Dijkstra, Distance Vector, Link State, Bellman-Ford, Flooding, and Static Routing workflows.',
+      'Convergence-focused visualizations for RIP-like and OSPF-like behavior.',
+      'Clear path-computation storytelling for teaching routing decisions and failure handling.',
+    ],
+  },
+  {
+    title: 'Packet Injection & Analysis Suite',
+    icon: Send,
+    eyebrow: 'Packet Observatory',
+    visualLabel: 'Traffic Trace',
+    accent: 'peach',
+    points: [
+      'Inject ICMP, TCP, UDP, and routing packets between selected hosts.',
+      'Tune payload, TTL, and source or destination IP details.',
+      'Inspect routing tables, MAC learning tables, hop history, latency, and delivery outcomes.',
+    ],
+  },
+  {
+    title: '"What-If" Chaos Engineering Engine',
+    icon: Activity,
+    eyebrow: 'Resilience Testing',
+    visualLabel: 'Failure Lab',
+    accent: 'red',
+    points: [
+      'Monte Carlo stress simulation for large-scale network behavior exploration.',
+      'Model random link failures, trunk congestion, and gateway crashes.',
+      'Generate reliability findings for convergence time, bottlenecks, packet loss, and failure-prone paths.',
+    ],
+  },
+  {
+    title: 'Live Hybrid FRRouting/Docker Emulator',
+    icon: Server,
+    eyebrow: 'Real Emulation',
+    visualLabel: 'FRR Bridge',
+    accent: 'green',
+    points: [
+      'Swap mathematical routing models for real FRRouting-backed behavior.',
+      'Spin up lightweight Dockerized routers for realistic protocol validation.',
+      'Read actual Linux routing tables to inspect practical SDN outcomes.',
+    ],
+  },
+  {
+    title: 'ARQ Protocol Simulator',
+    icon: Send,
+    eyebrow: 'Reliability Protocols',
+    visualLabel: 'ARQ Playback',
+    accent: 'blue',
+    points: [
+      'Visualize Stop-and-Wait, Go-Back-N, and Selective Repeat.',
+      'Inspect ACKs, timeouts, retransmissions, sliding windows, and out-of-order buffering.',
+      'Inject controlled frame or ACK drops to teach recovery behavior.',
+    ],
+  },
+  {
+    title: 'MAC Layer Media Access Simulator',
+    icon: Radio,
+    eyebrow: 'Shared Medium Control',
+    visualLabel: 'Collision View',
+    accent: 'lavender',
+    points: [
+      'Simulate CSMA/CD with carrier sensing, collisions, jam signals, and exponential backoff.',
+      'Demonstrate CSMA/CA wireless handshakes including RTS, CTS, DATA, and ACK timing.',
+    ],
+  },
+  {
+    title: 'Token-Based Network Simulator',
+    icon: Cpu,
+    eyebrow: 'Legacy Media Models',
+    visualLabel: 'Token Flow',
+    accent: 'peach',
+    points: [
+      'Animate token circulation for Token Ring and logical successor paths for Token Bus.',
+      'Show token capture, busy frames, acknowledgement behavior, and token release.',
+    ],
+  },
+  {
+    title: 'Security & Product Licensing',
+    icon: KeyRound,
+    eyebrow: 'Commercial Controls',
+    visualLabel: 'License Guard',
+    accent: 'green',
+    points: [
+      'RSA-signed activation keys with embedded verification and expiry checks.',
+      'Integrated activation dialog for license status, activation, and deactivation.',
+      'Premium feature gating based on validated license metadata.',
+    ],
+  },
+  {
+    title: 'Reports & Exports',
+    icon: FileText,
+    eyebrow: 'Evidence Output',
+    visualLabel: 'Export Center',
+    accent: 'lavender',
+    points: [
+      'Export high-resolution PNG topology snapshots.',
+      'Generate polished PDF reports covering nodes, links, interfaces, routing tables, and diagnostics.',
+    ],
+  },
+]
+
+const individualLicenseInr = 799
+const individualLicenseUsd = 19.38
+const web3FormsAccessKey = 'ecdab183-c7d4-4321-bd74-bb6a1a240387'
+const individualPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL as string | undefined
+const licenseIssueApiUrl = import.meta.env.VITE_LICENSE_ISSUE_API_URL as string | undefined
+
+// RSA Constants for Client-Side License Generation
+const RSA_N = 0x650ae787da5f5cc4da86753f88a1bfdb540c7e9abd0fb633149b75658e974e5cc2e2d49e5e6a1e5150c1f491882ba8b74857861e88199d66a6078380ee8eb240470cf8e624fc654584618d0bc1ffb4570e5521c6c8226246dc1d01eccaace4c5f187d9ec3bea9082e10e2e3f6385986953cb388ff5c5ff63a439164069571badn
+const RSA_D = 0x38308932ee484bd198e85ef976e4e4497702ffc0d3549270f38bc40c36f0837e684e3608dfde497fd4d617487b1e3453c06213ce94c711d60c8c6f1fdb09f5abc00c7beb9df1fa763d94bb702b9a8b2f7ea9c28b21639e64523db42f2b227aff00d8974c442dadfaeec5ac2d8845843fc05146dd251298cf8222cbdda75e47c1n
+
+function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
+  if (modulus === 1n) return 0n;
+  let result = 1n;
+  base = base % modulus;
+  while (exponent > 0n) {
+    if (exponent % 2n === 1n) {
+      result = (result * base) % modulus;
+    }
+    exponent = exponent / 2n;
+    base = (base * base) % modulus;
+  }
+  return result;
+}
+
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function generateLicense(userName: string, email: string, expiryDays = 365) {
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + expiryDays);
+  const expiryStr = expiryDate.toISOString().split('T')[0];
+  
+  const data = {
+    user: userName,
+    email: email,
+    expiry: expiryStr,
+    tier: "Enterprise Pro"
+  };
+  
+  // Exact JSON serialization spacing and key ordering to match python's json.dumps(data, sort_keys=True)
+  const dataStr = `{"email": ${JSON.stringify(email)}, "expiry": ${JSON.stringify(expiryStr)}, "tier": "Enterprise Pro", "user": ${JSON.stringify(userName)}}`;
+  
+  const hashHex = await sha256(dataStr);
+  const h = BigInt('0x' + hashHex);
+  
+  const sig = modPow(h, RSA_D, RSA_N);
+  
+  // Format outer JSON exact alignment
+  const licenseJsonStr = `{"data": {"user": ${JSON.stringify(userName)}, "email": ${JSON.stringify(email)}, "expiry": ${JSON.stringify(expiryStr)}, "tier": "Enterprise Pro"}, "signature": ${JSON.stringify('0x' + sig.toString(16))}}`;
+  
+  const bytes = new TextEncoder().encode(licenseJsonStr);
+  let binString = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binString += String.fromCharCode(bytes[i]);
+  }
+  const encoded = btoa(binString);
+  
+  const activationKey = [
+    "---BEGIN ACTIVATION KEY---",
+    encoded,
+    "---END ACTIVATION KEY---"
+  ].join("\n");
+  
+  return {
+    activationKey,
+    data
+  };
+}
+
+type PurchaseView = 'landing' | 'purchase-success'
+
+type IssuedLicense = {
+  email?: string
+  expiry?: string
+  licenseKey: string
+  user?: string
+}
+
+const getRegionalPricing = () => {
+  const fallback = {
+    amount: `$${individualLicenseUsd.toFixed(2)}`,
+    suffix: 'one-time license',
+    note: `Fixed international price. Visitors in India see Rs ${individualLicenseInr}.`,
+    isIndia: false,
+  }
+
+  if (typeof window === 'undefined') {
+    return fallback
+  }
+
+  const locale = navigator.language || 'en-US'
+  const region = new Intl.Locale(locale).maximize().region
+
+  if (region === 'IN') {
+    return {
+      amount: `Rs ${individualLicenseInr}`,
+      suffix: 'one-time license',
+      note: 'Displayed in INR for visitors in India.',
+      isIndia: true,
+    }
+  }
+
+  return fallback
+}
 
 
 function App() {
   // Navigation & Modals
   const [downloadModalOpen, setDownloadModalOpen] = useState(false)
   const [copiedText, setCopiedText] = useState('')
+  const [regionalPricing, setRegionalPricing] = useState(getRegionalPricing)
+  const [activeFeature, setActiveFeature] = useState(0)
+  const [purchaseView, setPurchaseView] = useState<PurchaseView>(() =>
+    window.location.hash.startsWith('#/purchase-success') ? 'purchase-success' : 'landing'
+  )
+  const [issuedLicense, setIssuedLicense] = useState<IssuedLicense | null>(null)
+  const [licenseLoading, setLicenseLoading] = useState(false)
+  const [licenseError, setLicenseError] = useState('')
+  const [buyerName, setBuyerName] = useState('')
+  const [buyerEmail, setBuyerEmail] = useState('')
+  const [paymentId, setPaymentId] = useState('')
 
 
 
@@ -75,6 +322,8 @@ function App() {
   // 5. Contact Form States
   const [contactForm, setContactForm] = useState({ name: '', email: '', org: '', message: '' })
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [formSubmitting, setFormSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
 
   // References for Auto-scroll
   const terminalEndRef = useRef<HTMLDivElement>(null)
@@ -84,6 +333,70 @@ function App() {
       terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight
     }
   }, [terminalLines])
+
+  useEffect(() => {
+    setRegionalPricing(getRegionalPricing())
+  }, [])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveFeature((current) => (current + 1) % featureGroups.length)
+    }, 5000)
+
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setPurchaseView(window.location.hash.startsWith('#/purchase-success') ? 'purchase-success' : 'landing')
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  useEffect(() => {
+    if (purchaseView !== 'purchase-success') return
+
+    setLicenseError('')
+    setIssuedLicense(null)
+
+    const rawHash = window.location.hash.replace(/^#\/purchase-success\??/, '')
+    const params = new URLSearchParams(rawHash)
+    const searchParams = new URLSearchParams(window.location.search)
+    const payId = params.get('razorpay_payment_id') || params.get('payment_id') || 
+                  searchParams.get('razorpay_payment_id') || searchParams.get('payment_id') || ''
+
+    if (!payId) {
+      setLicenseError('Payment reference is missing from the success URL, so the license could not be issued.')
+      return
+    }
+
+    setPaymentId(payId)
+  }, [purchaseView])
+
+  const handleGenerateLicenseClientSide = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!buyerName.trim() || !buyerEmail.trim()) {
+      setLicenseError('Name and Email are required to generate your license.')
+      return
+    }
+    setLicenseLoading(true)
+    setLicenseError('')
+    try {
+      const { activationKey, data } = await generateLicense(buyerName.trim(), buyerEmail.trim())
+      setIssuedLicense({
+        licenseKey: activationKey,
+        user: data.user,
+        email: data.email,
+        expiry: data.expiry
+      })
+    } catch (err) {
+      setLicenseError('Failed to generate license key. Please check your inputs.')
+    } finally {
+      setLicenseLoading(false)
+    }
+  }
 
 
 
@@ -394,6 +707,162 @@ function App() {
     setTimeout(() => setCopiedText(''), 2000)
   }
 
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError('')
+    setFormSubmitting(true)
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: web3FormsAccessKey,
+          subject: `SimLab contact form inquiry from ${contactForm.name}`,
+          from_name: contactForm.name,
+          name: contactForm.name,
+          email: contactForm.email,
+          organization: contactForm.org,
+          message: contactForm.message,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Unable to send your message right now.')
+      }
+
+      setFormSubmitted(true)
+      setContactForm({ name: '', email: '', org: '', message: '' })
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Unable to send your message right now.')
+    } finally {
+      setFormSubmitting(false)
+    }
+  }
+
+  const currentFeature = featureGroups[activeFeature]
+
+  const handleFeatureStep = (direction: 'prev' | 'next') => {
+    setActiveFeature((current) => {
+      if (direction === 'prev') {
+        return current === 0 ? featureGroups.length - 1 : current - 1
+      }
+      return (current + 1) % featureGroups.length
+    })
+  }
+
+  if (purchaseView === 'purchase-success') {
+    return (
+      <section className="container purchase-success-page">
+        <div className="purchase-success-shell card">
+          <span className="badge badge-green">Purchase Successful</span>
+          <h1 className="purchase-success-title">Your Frissco SimLab license</h1>
+          
+          {paymentId && !issuedLicense && (
+            <p className="purchase-success-copy">
+              Your payment has been verified (ID: {paymentId}). Please enter your licensee name and email below to generate your cryptographically signed activation key.
+            </p>
+          )}
+
+          {issuedLicense && (
+            <p className="purchase-success-copy">
+              Your activation key has been successfully generated. Please copy and store it somewhere safe.
+            </p>
+          )}
+
+          {!paymentId && (
+            <p className="purchase-success-copy">
+              Verifying your payment...
+            </p>
+          )}
+
+          {licenseLoading && (
+            <div className="purchase-status-panel">
+              <p>Generating your activation key...</p>
+            </div>
+          )}
+
+          {!licenseLoading && licenseError && (
+            <div className="purchase-status-panel purchase-status-error">
+              <p>{licenseError}</p>
+              <p className="purchase-status-help">
+                If Razorpay shows the payment as successful, do not pay again. Keep your payment reference and contact support if needed.
+              </p>
+            </div>
+          )}
+
+          {!licenseLoading && !licenseError && !issuedLicense && paymentId && (
+            <form onSubmit={handleGenerateLicenseClientSide} className="contact-form" style={{ margin: '24px 0 0 0', width: '100%', maxWidth: '100%' }}>
+              <div className="form-group">
+                <label htmlFor="buyerName">Licensee Name</label>
+                <input
+                  type="text"
+                  id="buyerName"
+                  required
+                  value={buyerName}
+                  onChange={(e) => setBuyerName(e.target.value)}
+                  className="form-input"
+                  placeholder="e.g. Sidharth"
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label htmlFor="buyerEmail">Licensee Email</label>
+                <input
+                  type="email"
+                  id="buyerEmail"
+                  required
+                  value={buyerEmail}
+                  onChange={(e) => setBuyerEmail(e.target.value)}
+                  className="form-input"
+                  placeholder="e.g. sid@example.com"
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '24px', width: '100%' }}>
+                Generate License Key
+              </button>
+            </form>
+          )}
+
+          {!licenseLoading && issuedLicense && (
+            <>
+              <div className="purchase-license-meta">
+                <div><strong>Licensee:</strong> {issuedLicense.user || 'Licensed User'}</div>
+                <div><strong>Email:</strong> {issuedLicense.email || 'Provided at checkout'}</div>
+                <div><strong>Expiry:</strong> {issuedLicense.expiry || 'Included in the issued key'}</div>
+              </div>
+
+              <div className="purchase-license-box">
+                <button
+                  onClick={() => copyToClipboard(issuedLicense.licenseKey, 'license')}
+                  className="copy-btn purchase-copy-btn"
+                  type="button"
+                >
+                  {copiedText === 'license' ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+                <pre className="purchase-license-pre"><code>{issuedLicense.licenseKey}</code></pre>
+              </div>
+
+              <div className="purchase-warning">
+                <AlertTriangle size={18} />
+                <p>Kindly store this License Key somewhere safe to not lose it.</p>
+              </div>
+            </>
+          )}
+
+          <div className="purchase-success-actions">
+            <a href="#" className="btn btn-secondary">Back to site</a>
+            <a href="#contact" className="btn btn-outline">Need help?</a>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <>
       {/* 1. Header Navigation */}
@@ -405,6 +874,7 @@ function App() {
           <nav>
             <ul className="nav-links">
               <li><a href="#audience">Overview</a></li>
+              <li><a href="#features">Features</a></li>
               <li><a href="#labs">Protocol Labs</a></li>
               <li><a href="#chaos">Chaos Engine</a></li>
               <li><a href="#security">Security</a></li>
@@ -531,64 +1001,238 @@ function App() {
         </div>
       </section>
 
+      <section className="container" id="audience">
+        <div className="section-header section-header-left">
+          <span className="badge badge-blue">Software Overview</span>
+          <h2>What Frissco SimLab does</h2>
+          <p>
+            Frissco SimLab is a network simulation and protocol-learning platform built for students, instructors,
+            researchers, and engineering teams. It helps teams design topologies, visualize routing behavior,
+            inject packets, test failure scenarios, and validate software-defined networking decisions in one guided environment.
+          </p>
+        </div>
+
+        <div className="overview-grid">
+          <div className="card overview-card">
+            <h3>Built for understanding and validation</h3>
+            <p>
+              Use SimLab to move from theory to proof. You can model networks visually, observe protocol behavior step by step,
+              run experiments under stress, and export evidence for reports, teaching, or engineering review.
+            </p>
+          </div>
+          <div className="card overview-card">
+            <h3>From classroom labs to production planning</h3>
+            <p>
+              The platform supports everything from academic protocol demonstrations to realistic FRRouting and Docker-backed
+              emulation, making it useful for both learning environments and professional network validation workflows.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="container" id="features" style={{ borderTop: '1px solid var(--surface-0)' }}>
+        <div className="section-header">
+          <span className="badge badge-lavender">Core Feature Showcase</span>
+          <h2>Explore the platform like a product demo</h2>
+          <p>
+            Browse the core capabilities as a visual carousel. Each slide highlights one part of the SimLab workflow
+            so visitors can quickly understand what the software does in practice.
+          </p>
+        </div>
+
+        <div className={`feature-showcase accent-${currentFeature.accent}`}>
+          <div className="feature-showcase-shell">
+            <div
+              className="feature-showcase-track"
+              style={{ transform: `translateX(-${activeFeature * 100}%)` }}
+            >
+              {featureGroups.map((feature, index) => {
+                const SlideIcon = feature.icon
+
+                return (
+                  <article key={feature.title} className={`feature-slide accent-${feature.accent}`}>
+                    <div className="feature-showcase-visual">
+                      <div className="feature-showcase-frame">
+                        <img src={heroImage} alt={feature.title} className="feature-showcase-image" />
+                        <div className="feature-showcase-overlay"></div>
+
+                        <div className="feature-showcase-topbar">
+                          <span className="badge badge-blue">{feature.eyebrow}</span>
+                          <span className="feature-showcase-count">
+                            {String(index + 1).padStart(2, '0')} / {String(featureGroups.length).padStart(2, '0')}
+                          </span>
+                        </div>
+
+                        <div className="feature-showcase-floating feature-showcase-floating-primary">
+                          <SlideIcon size={18} />
+                          <span>{feature.visualLabel}</span>
+                        </div>
+                        <div className="feature-showcase-floating feature-showcase-floating-secondary">
+                          <span className="feature-pulse-dot"></span>
+                          <span>Interactive showcase</span>
+                        </div>
+                        <div className="feature-showcase-floating feature-showcase-floating-tertiary">
+                          <span>{feature.points.length} highlights</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="feature-showcase-copy">
+                      <div className="feature-showcase-copy-head">
+                        <div className="feature-icon-wrapper">
+                          <SlideIcon size={22} />
+                        </div>
+                        <div>
+                          <span className="feature-eyebrow">{feature.eyebrow}</span>
+                          <h3>{feature.title}</h3>
+                        </div>
+                      </div>
+
+                      <ul className="feature-list">
+                        {feature.points.map((point) => (
+                          <li key={point}>
+                            <Check size={16} className="text-accent" />
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="feature-carousel-controls">
+            <button type="button" className="feature-nav-btn" onClick={() => handleFeatureStep('prev')} aria-label="Previous feature">
+              <ChevronLeft size={18} />
+            </button>
+            <div className="feature-dots" aria-label="Feature slide selectors">
+              {featureGroups.map((feature, index) => (
+                <button
+                  key={feature.title}
+                  type="button"
+                  className={`feature-dot-btn ${index === activeFeature ? 'active' : ''}`}
+                  onClick={() => setActiveFeature(index)}
+                  aria-label={`Show ${feature.title}`}
+                />
+              ))}
+            </div>
+            <button type="button" className="feature-nav-btn" onClick={() => handleFeatureStep('next')} aria-label="Next feature">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          <div className="feature-rail">
+            {featureGroups.map((feature, index) => {
+              const RailIcon = feature.icon
+              return (
+                <button
+                  key={feature.title}
+                  type="button"
+                  className={`feature-rail-item ${index === activeFeature ? 'active' : ''}`}
+                  onClick={() => setActiveFeature(index)}
+                >
+                  <RailIcon size={16} />
+                  <span>{feature.title}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section className="container" id="pricing" style={{ borderTop: '1px solid var(--surface-0)' }}>
         <div className="section-header">
           <span className="badge badge-lavender">Licensing Plans</span>
-          <h2>Clear, Developer-Friendly Pricing</h2>
-          <p>Deploy Frissco SimLab to technical classrooms or SDN engineering operations.</p>
+          <h2>Simple licensing for solo users and organizations</h2>
+          <p>Start with the free essentials, upgrade for the full individual toolkit, or contact sales for multi-user and institutional licensing.</p>
         </div>
 
         <div className="pricing-grid">
-          {/* Tier 1: Academic */}
           <div className="card pricing-card">
             <div>
-              <span className="badge badge-blue">Educational</span>
-              <h3 style={{ marginTop: '8px' }}>Academic Site License</h3>
-              <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>Ideal for colleges, lab courses, and technical academies.</p>
-              
+              <span className="badge badge-green">Free</span>
+              <h3 style={{ marginTop: '8px' }}>Free Plan</h3>
+              <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>
+                A lightweight starting point for learning the interface and experimenting with core network design workflows.
+              </p>
+
               <div className="price-box">
-                <span className="price-num">$249</span>
-                <span className="price-period">/ semester</span>
+                <span className="price-num">$0</span>
+                <span className="price-period">/ forever</span>
               </div>
+              <p className="pricing-note">Best for trying the basics before moving into advanced labs and analysis.</p>
 
               <ul className="pricing-features">
-                <li><Check size={16} className="text-accent" /> Custom PDF report exports (for assignments)</li>
-                <li><Check size={16} className="text-accent" /> 6 Interactive Protocol Laboratories</li>
-                <li><Check size={16} className="text-accent" /> Multi-seat campus delivery (macOS, Win, Linux)</li>
-                <li><Check size={16} className="text-accent" /> 24/7 Educational syllabus material access</li>
+                <li><Check size={16} className="text-accent" /> Topology editor canvas</li>
+                <li><Check size={16} className="text-accent" /> Router, host, and switch placement</li>
+                <li><Check size={16} className="text-accent" /> Basic path finding and shortest-path exploration</li>
               </ul>
             </div>
 
-            <button onClick={() => setDownloadModalOpen(true)} className="btn btn-secondary" style={{ width: '100%' }}>
-              Download Academic Bundle
+            <button onClick={() => setDownloadModalOpen(true)} className="btn btn-outline" style={{ width: '100%' }}>
+              Start Free
             </button>
           </div>
 
-          {/* Tier 2: Enterprise */}
           <div className="card pricing-card popular">
-            <div className="popular-badge">POPULAR</div>
+            <div className="popular-badge">INDIVIDUAL</div>
             <div>
-              <span className="badge badge-lavender">Commercial</span>
-              <h3 style={{ marginTop: '8px' }}>Enterprise Team License</h3>
-              <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>For SDN validation, DevOps teams, and network architects.</p>
+              <span className="badge badge-blue">{regionalPricing.isIndia ? 'India Pricing' : 'International Pricing'}</span>
+              <h3 style={{ marginTop: '8px' }}>Individual License</h3>
+              <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>
+                Best for self-learning, research, demos, and single-user network simulation workstations.
+              </p>
               
               <div className="price-box">
-                <span className="price-num">$899</span>
-                <span className="price-period">/ year (seat-based)</span>
+                <span className="price-num">{regionalPricing.amount}</span>
+                <span className="price-period">/ {regionalPricing.suffix}</span>
+              </div>
+              <p className="pricing-note">{regionalPricing.note}</p>
+
+              <ul className="pricing-features">
+                <li><Check size={16} className="text-accent" /> Full access to the core simulation suite</li>
+                <li><Check size={16} className="text-accent" /> Visual routing, packet analysis, and protocol labs</li>
+                <li><Check size={16} className="text-accent" /> Chaos testing, exports, and reporting workflows</li>
+                <li><Check size={16} className="text-accent" /> Ideal for personal labs, students, and independent engineers</li>
+              </ul>
+            </div>
+
+            {individualPaymentUrl ? (
+              <a href={individualPaymentUrl} className="btn btn-secondary" style={{ width: '100%' }}>
+                Buy Individual License
+              </a>
+            ) : (
+              <button onClick={() => setDownloadModalOpen(true)} className="btn btn-secondary" style={{ width: '100%' }}>
+                Buy Individual License
+              </button>
+            )}
+          </div>
+
+          <div className="card pricing-card">
+            <div>
+              <span className="badge badge-lavender">Custom Quote</span>
+              <h3 style={{ marginTop: '8px' }}>Team, Educational or Enterprise License</h3>
+              <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>
+                For classrooms, labs, departments, and organizations that need multi-user licensing, onboarding, or custom support.
+              </p>
+              
+              <div className="price-box">
+                <span className="price-num">Contact Sales</span>
               </div>
 
               <ul className="pricing-features">
-                <li><Check size={16} className="text-accent" /> Live Hybrid Emulation (FRR Docker bridge)</li>
-                <li><Check size={16} className="text-accent" /> Autogenerate production-ready CLI scripts</li>
-                <li><Check size={16} className="text-accent" /> Chaos Reliability Engine APIs</li>
-                <li><Check size={16} className="text-accent" /> Full anti-tamper security integrations</li>
-                <li><Check size={16} className="text-accent" /> Priority email & SLA developer support</li>
+                <li><Check size={16} className="text-accent" /> Multi-seat licensing for institutions and teams</li>
+                <li><Check size={16} className="text-accent" /> Educational, departmental, and enterprise procurement support</li>
+                <li><Check size={16} className="text-accent" /> Deployment guidance for classroom or organizational rollout</li>
+                <li><Check size={16} className="text-accent" /> Commercial support and custom engagement options</li>
               </ul>
             </div>
 
             <a href="#contact" className="btn btn-primary" style={{ width: '100%' }}>
-              Request Enterprise License
+              Contact Sales
             </a>
           </div>
         </div>
@@ -611,16 +1255,10 @@ function App() {
             <p className="mt-4" style={{ marginBottom: '24px' }}>
               Your inquiry has been successfully dispatched to the Frissco support desk. A representative will contact you at your provided email.
             </p>
-            <button onClick={() => setFormSubmitted(false)} className="btn btn-outline btn-sm">Send another message</button>
+            <button onClick={() => { setFormSubmitted(false); setFormError('') }} className="btn btn-outline btn-sm">Send another message</button>
           </div>
         ) : (
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault()
-              setFormSubmitted(true)
-            }} 
-            className="contact-form"
-          >
+          <form onSubmit={handleContactSubmit} className="contact-form">
             <div className="form-group">
               <label htmlFor="name">Full Name</label>
               <input 
@@ -672,8 +1310,12 @@ function App() {
               ></textarea>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }}>
-              <Mail size={16} /> Send Inquiry
+            {formError && (
+              <p style={{ color: 'var(--accent-red)', fontSize: '0.9rem' }}>{formError}</p>
+            )}
+
+            <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }} disabled={formSubmitting}>
+              <Mail size={16} /> {formSubmitting ? 'Sending...' : 'Send Inquiry'}
             </button>
           </form>
         )}
