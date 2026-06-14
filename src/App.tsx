@@ -361,14 +361,36 @@ function App() {
     setLicenseError('')
     setIssuedLicense(null)
 
-    const rawHash = window.location.hash.replace(/^#\/purchase-success\??/, '')
-    const params = new URLSearchParams(rawHash)
-    const searchParams = new URLSearchParams(window.location.search)
-    const payId = params.get('razorpay_payment_id') || params.get('payment_id') || 
-                  searchParams.get('razorpay_payment_id') || searchParams.get('payment_id') || ''
+    // Robust extraction function to find the payment ID anywhere in the URL
+    const getPaymentId = () => {
+      const href = window.location.href;
+      
+      // 1. Try standard query params (window.location.search)
+      const searchParams = new URLSearchParams(window.location.search);
+      let id = searchParams.get('razorpay_payment_id') || searchParams.get('payment_id') || searchParams.get('razorpay_payment_link_id');
+      if (id) return id;
+
+      // 2. Try parsing hash query parameters (window.location.hash)
+      const hash = window.location.hash;
+      const hashQuestionMark = hash.indexOf('?');
+      if (hashQuestionMark !== -1) {
+        const hashParams = new URLSearchParams(hash.substring(hashQuestionMark + 1));
+        id = hashParams.get('razorpay_payment_id') || hashParams.get('payment_id') || hashParams.get('razorpay_payment_link_id');
+        if (id) return id;
+      }
+
+      // 3. Fallback: regex search on entire URL
+      const matches = href.match(/[?&](razorpay_payment_id|payment_id|razorpay_payment_link_id)=([^&#]+)/);
+      if (matches && matches[2]) {
+        return decodeURIComponent(matches[2]);
+      }
+      
+      return '';
+    };
+
+    const payId = getPaymentId();
 
     if (!payId) {
-      setLicenseError('Payment reference is missing from the success URL, so the license could not be issued.')
       return
     }
 
@@ -776,9 +798,40 @@ function App() {
           )}
 
           {!paymentId && (
-            <p className="purchase-success-copy">
-              Verifying your payment...
-            </p>
+            <div style={{ marginTop: '24px', width: '100%' }}>
+              <div className="purchase-status-panel purchase-status-error" style={{ marginBottom: '20px' }}>
+                <p>Payment reference was not detected automatically from the redirection URL.</p>
+                <p className="purchase-status-help" style={{ marginTop: '8px' }}>
+                  This can happen if the browser redirected without query parameters or if the redirect was configured as a POST request.
+                </p>
+              </div>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const inputId = (e.currentTarget.elements.namedItem('manualPaymentId') as HTMLInputElement).value.trim();
+                if (inputId) {
+                  setPaymentId(inputId);
+                  setLicenseError('');
+                }
+              }} className="contact-form" style={{ width: '100%', maxWidth: '100%' }}>
+                <div className="form-group">
+                  <label htmlFor="manualPaymentId">Enter Payment ID Manually</label>
+                  <input
+                    type="text"
+                    id="manualPaymentId"
+                    name="manualPaymentId"
+                    required
+                    className="form-input"
+                    placeholder="e.g. pay_Oky3C1F4wzJ3hC"
+                  />
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '6px', display: 'block' }}>
+                    You can find this ID in your Razorpay email receipt or SMS confirmation.
+                  </span>
+                </div>
+                <button type="submit" className="btn btn-secondary" style={{ marginTop: '16px', width: '100%' }}>
+                  Verify & Continue
+                </button>
+              </form>
+            </div>
           )}
 
           {licenseLoading && (
