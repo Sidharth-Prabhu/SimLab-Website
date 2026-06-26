@@ -69,7 +69,11 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { paymentId, name, email } = JSON.parse(event.body);
+    let rawBody = event.body || '';
+    if (event.isBase64Encoded && rawBody) {
+      rawBody = Buffer.from(rawBody, 'base64').toString('utf8');
+    }
+    const { paymentId, name, email } = JSON.parse(rawBody);
 
     if (!paymentId || !name || !email) {
       return {
