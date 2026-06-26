@@ -18,7 +18,11 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  CreditCard,
+  QrCode,
+  Building,
+  Loader2
 } from 'lucide-react'
 import simlabLogo from './assets/simlab.png'
 import frisscoSimlabLogo from './assets/frissco_simlab.png'
@@ -180,16 +184,21 @@ function App() {
   const [purchaseView, setPurchaseView] = useState<PurchaseView>(() =>
     window.location.hash.startsWith('#/purchase-success') ? 'purchase-success' : 'landing'
   )
-  const [issuedLicense, setIssuedLicense] = useState<IssuedLicense | null>(null)
-  const [licenseLoading, setLicenseLoading] = useState(false)
-  const [licenseError, setLicenseError] = useState('')
-  const [buyerName, setBuyerName] = useState('')
-  const [buyerEmail, setBuyerEmail] = useState('')
-  const [buyerOrg, setBuyerOrg] = useState('')
-  const [paymentId, setPaymentId] = useState('')
-  const [purchaseFormSubmitted, setPurchaseFormSubmitted] = useState(false)
-  const [purchaseFormSubmitting, setPurchaseFormSubmitting] = useState(false)
-  const [purchaseFormError, setPurchaseFormError] = useState('')
+  // Checkout Modal & Gateway states
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false)
+  const [checkoutStep, setCheckoutStep] = useState<'info' | 'payment' | 'processing'>('info')
+  const [checkoutName, setCheckoutName] = useState('')
+  const [checkoutEmail, setCheckoutEmail] = useState('')
+  const [checkoutOrg, setCheckoutOrg] = useState('')
+  const [checkoutMethod, setCheckoutMethod] = useState<'upi' | 'card' | 'netbanking'>('upi')
+  const [checkoutCardNumber, setCheckoutCardNumber] = useState('')
+  const [checkoutCardExpiry, setCheckoutCardExpiry] = useState('')
+  const [checkoutCardCvv, setCheckoutCardCvv] = useState('')
+  const [checkoutUpiId, setCheckoutUpiId] = useState('')
+  const [checkoutNetBank, setCheckoutNetBank] = useState('sbi')
+  const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
+  const [processingStatus, setProcessingStatus] = useState('')
 
 
 
@@ -274,59 +283,42 @@ function App() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  useEffect(() => {
-    if (purchaseView !== 'purchase-success') return
-
-    setLicenseError('')
-    setIssuedLicense(null)
-
-    // Robust extraction function to find the payment ID anywhere in the URL
-    const getPaymentId = () => {
-      const href = window.location.href;
-      
-      // 1. Try standard query params (window.location.search)
-      const searchParams = new URLSearchParams(window.location.search);
-      let id = searchParams.get('razorpay_payment_id') || searchParams.get('payment_id') || searchParams.get('razorpay_payment_link_id');
-      if (id) return id;
-
-      // 2. Try parsing hash query parameters (window.location.hash)
-      const hash = window.location.hash;
-      const hashQuestionMark = hash.indexOf('?');
-      if (hashQuestionMark !== -1) {
-        const hashParams = new URLSearchParams(hash.substring(hashQuestionMark + 1));
-        id = hashParams.get('razorpay_payment_id') || hashParams.get('payment_id') || hashParams.get('razorpay_payment_link_id');
-        if (id) return id;
-      }
-
-      // 3. Fallback: regex search on entire URL
-      const matches = href.match(/[?&](razorpay_payment_id|payment_id|razorpay_payment_link_id)=([^&#]+)/);
-      if (matches && matches[2]) {
-        return decodeURIComponent(matches[2]);
-      }
-      
-      return '';
-    };
-
-    const payId = getPaymentId();
-
-    if (payId) {
-      setPaymentId(payId);
-      // Immediately clear URL query parameters to prevent direct copy-pasting and bookmarking
-      const cleanUrl = window.location.origin + window.location.pathname + '#/purchase-success';
-      window.history.replaceState({}, document.title, cleanUrl);
-    }
-  }, [purchaseView])
-
-  const handleLicenseFormSubmit = async (e: React.FormEvent) => {
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!buyerName.trim() || !buyerEmail.trim()) {
-      setPurchaseFormError('Name and Email are required.')
+    if (checkoutStep === 'info') {
+      if (!checkoutName.trim() || !checkoutEmail.trim()) {
+        setCheckoutError('Name and Email are required.')
+        return
+      }
+      setCheckoutError('')
+      setCheckoutStep('payment')
       return
     }
-    setPurchaseFormSubmitting(true)
-    setPurchaseFormError('')
+
+    setCheckoutStep('processing')
+    setCheckoutError('')
+    setIsSubmittingCheckout(true)
+
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
     try {
+      setProcessingStatus('Securing connection...')
+      await delay(800)
+      setProcessingStatus('Authorizing transaction with bank...')
+      await delay(900)
+      setProcessingStatus('Finalizing order...')
+      await delay(500)
+
+      let paymentDetailStr = ''
+      if (checkoutMethod === 'upi') {
+        paymentDetailStr = `UPI ID: ${checkoutUpiId || 'Simulated UPI Pay'}`
+      } else if (checkoutMethod === 'card') {
+        const maskedCard = checkoutCardNumber ? `Card ending in ${checkoutCardNumber.slice(-4)}` : 'Simulated Card'
+        paymentDetailStr = maskedCard
+      } else {
+        paymentDetailStr = `Net Banking (Bank: ${checkoutNetBank.toUpperCase()})`
+      }
+
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: {
@@ -335,31 +327,46 @@ function App() {
         },
         body: JSON.stringify({
           access_key: web3FormsAccessKey,
-          subject: `SimLab License Request - Payment ID: ${paymentId}`,
-          from_name: 'SimLab Checkout Form',
-          name: buyerName.trim(),
-          email: buyerEmail.trim(),
-          organization: buyerOrg.trim(),
-          message: `License details submitted by customer:
-          
-Customer Name: ${buyerName.trim()}
-Customer Email: ${buyerEmail.trim()}
-Organization: ${buyerOrg.trim() || 'None'}
-Razorpay Payment ID: ${paymentId}`,
+          subject: `[SimLab Order] Individual License Request - ${checkoutName}`,
+          from_name: 'SimLab Checkout Gateway',
+          name: checkoutName,
+          email: checkoutEmail,
+          message: `Hello! A new payment order has been submitted for Frissco SimLab.
+
+Customer Name: ${checkoutName}
+Customer Email: ${checkoutEmail}
+Organization: ${checkoutOrg || 'None'}
+
+Order details:
+- Plan: Individual License
+- Price: Rs 1843
+- Payment Method: ${checkoutMethod.toUpperCase()}
+- Payment Details: ${paymentDetailStr}
+- Status: Simulated Payment Success`
         }),
       })
 
       const result = await response.json()
-
       if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Unable to submit your details at this time.')
+        throw new Error(result.message || 'Unable to submit order. Please try again.')
       }
 
-      setPurchaseFormSubmitted(true)
-    } catch (error) {
-      setPurchaseFormError(error instanceof Error ? error.message : 'Unable to submit your details right now.')
+      setCheckoutModalOpen(false)
+      setCheckoutStep('info')
+      setCheckoutName('')
+      setCheckoutEmail('')
+      setCheckoutOrg('')
+      setCheckoutUpiId('')
+      setCheckoutCardNumber('')
+      setCheckoutCardExpiry('')
+      setCheckoutCardCvv('')
+      
+      window.location.hash = '#/purchase-success'
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Transaction failed. Please try again.')
+      setCheckoutStep('payment')
     } finally {
-      setPurchaseFormSubmitting(false)
+      setIsSubmittingCheckout(false)
     }
   }
 
@@ -722,151 +729,47 @@ Razorpay Payment ID: ${paymentId}`,
   }
 
   if (purchaseView === 'purchase-success') {
-    // 1. Access Denied: User did not redirect from Razorpay (no paymentId in state)
-    if (!paymentId) {
-      return (
-        <section className="container purchase-success-page">
-          <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '24px' }}>
-            <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-red)', color: 'var(--accent-red)', background: 'rgba(243, 139, 168, 0.1)', boxShadow: '0 0 20px rgba(243, 139, 168, 0.2)' }}>
-              <X size={32} />
-            </div>
-            
-            <span className="badge badge-red" style={{ textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-red)', borderColor: 'var(--accent-red)' }}>Access Denied</span>
-            
-            <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', color: 'var(--text-heading)' }}>
-              Invalid Reference
-            </h1>
-            
-            <p className="purchase-success-copy" style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--text-dim)', maxWidth: '550px', margin: '0 auto' }}>
-              This page can only be accessed directly after a completed payment redirection. If you've already completed checkout, please check your mailbox or contact our support team.
-            </p>
-
-            <div className="purchase-success-actions" style={{ marginTop: '16px' }}>
-              <a href="#" className="btn btn-primary">Back to site</a>
-              <a href="#contact" className="btn btn-outline">Need help?</a>
-            </div>
-          </div>
-        </section>
-      )
-    }
-
-    // 2. Form Submitted: Show thank you page
-    if (purchaseFormSubmitted) {
-      return (
-        <section className="container purchase-success-page">
-          <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '32px' }}>
-            <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-green)', color: 'var(--accent-green)', background: 'rgba(166, 227, 161, 0.1)', boxShadow: '0 0 20px rgba(166, 227, 161, 0.2)' }}>
-              <Check size={32} />
-            </div>
-            
-            <span className="badge badge-green" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Registration Complete</span>
-            
-            <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #fff 0%, var(--text-dim) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Thank you for purchasing Frissco SimLab
-            </h1>
-            
-            <p className="purchase-success-copy" style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-primary)', maxWidth: '600px', margin: '0 auto' }}>
-              You will get your download through your mail within <strong>24 Hours</strong>.
-            </p>
-
-            <div style={{
-              width: '100%',
-              maxWidth: '500px',
-              margin: '20px auto 0',
-              padding: '24px',
-              borderRadius: '16px',
-              border: '1px solid var(--surface-0)',
-              background: 'rgba(255, 255, 255, 0.02)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              <Mail size={24} style={{ color: 'var(--accent-lavender)' }} />
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>For further queries, contact:</span>
-              <a href="mailto:thefrisscoteamofficial@gmail.com" style={{ fontSize: '1.1rem', color: 'var(--accent-lavender)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px dashed var(--accent-lavender)', paddingBottom: '2px' }}>
-                thefrisscoteamofficial@gmail.com
-              </a>
-            </div>
-
-            <div className="purchase-success-actions" style={{ marginTop: '12px' }}>
-              <a href="#" className="btn btn-primary">Back to site</a>
-              <a href="#contact" className="btn btn-outline">Need help?</a>
-            </div>
-          </div>
-        </section>
-      )
-    }
-
-    // 3. Form Input: Show Details Form
     return (
       <section className="container purchase-success-page">
-        <div className="purchase-success-shell card" style={{ padding: '48px', maxWidth: '600px', margin: '0 auto' }}>
-          <span className="badge badge-lavender" style={{ textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Final Step</span>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '8px', color: 'var(--text-heading)' }}>Activate License</h2>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '32px', lineHeight: '1.5' }}>
-            Please fill out your details to register your copy of Frissco SimLab. Your activation key and build links will be issued to this email.
+        <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '32px' }}>
+          <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-green)', color: 'var(--accent-green)', background: 'rgba(166, 227, 161, 0.1)', boxShadow: '0 0 20px rgba(166, 227, 161, 0.2)' }}>
+            <Check size={32} />
+          </div>
+          
+          <span className="badge badge-green" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Purchase Successful</span>
+          
+          <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #fff 0%, var(--text-dim) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Thank you for purchasing Frissco SimLab
+          </h1>
+          
+          <p className="purchase-success-copy" style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-primary)', maxWidth: '600px', margin: '0 auto' }}>
+            You will get your download through your mail within <strong>24 Hours</strong>.
           </p>
 
-          <form onSubmit={handleLicenseFormSubmit} className="contact-form" style={{ width: '100%', maxWidth: '100%' }}>
-            <div className="form-group">
-              <label htmlFor="buyerName">Licensee Name</label>
-              <input
-                type="text"
-                id="buyerName"
-                required
-                value={buyerName}
-                onChange={(e) => setBuyerName(e.target.value)}
-                className="form-input"
-                placeholder="e.g. Sidharth"
-              />
-            </div>
-            
-            <div className="form-group" style={{ marginTop: '16px' }}>
-              <label htmlFor="buyerEmail">Licensee Email</label>
-              <input
-                type="email"
-                id="buyerEmail"
-                required
-                value={buyerEmail}
-                onChange={(e) => setBuyerEmail(e.target.value)}
-                className="form-input"
-                placeholder="e.g. sid@example.com"
-              />
-            </div>
+          <div style={{
+            width: '100%',
+            maxWidth: '500px',
+            margin: '20px auto 0',
+            padding: '24px',
+            borderRadius: '16px',
+            border: '1px solid var(--surface-0)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <Mail size={24} style={{ color: 'var(--accent-lavender)' }} />
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>For further queries, contact:</span>
+            <a href="mailto:thefrisscoteamofficial@gmail.com" style={{ fontSize: '1.1rem', color: 'var(--accent-lavender)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px dashed var(--accent-lavender)', paddingBottom: '2px' }}>
+              thefrisscoteamofficial@gmail.com
+            </a>
+          </div>
 
-            <div className="form-group" style={{ marginTop: '16px' }}>
-              <label htmlFor="buyerOrg">Organization / University (Optional)</label>
-              <input
-                type="text"
-                id="buyerOrg"
-                value={buyerOrg}
-                onChange={(e) => setBuyerOrg(e.target.value)}
-                className="form-input"
-                placeholder="e.g. Stanford University"
-              />
-            </div>
-
-            <div className="form-group" style={{ marginTop: '16px' }}>
-              <label htmlFor="refPaymentId">Payment ID Reference</label>
-              <input
-                type="text"
-                id="refPaymentId"
-                disabled
-                value={paymentId}
-                className="form-input"
-                style={{ opacity: 0.6, cursor: 'not-allowed', backgroundColor: 'var(--bg-crust)' }}
-              />
-            </div>
-
-            {purchaseFormError && (
-              <p style={{ color: 'var(--accent-red)', fontSize: '0.9rem', marginTop: '12px' }}>{purchaseFormError}</p>
-            )}
-
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '32px', width: '100%' }} disabled={purchaseFormSubmitting}>
-              {purchaseFormSubmitting ? 'Registering...' : 'Confirm & Activate'}
-            </button>
-          </form>
+          <div className="purchase-success-actions" style={{ marginTop: '12px' }}>
+            <a href="#" className="btn btn-primary">Back to site</a>
+            <a href="#contact" className="btn btn-outline">Need help?</a>
+          </div>
         </div>
       </section>
     )
@@ -1209,15 +1112,20 @@ Razorpay Payment ID: ${paymentId}`,
               </ul>
             </div>
 
-            {individualPaymentUrl ? (
-              <a href={individualPaymentUrl} className="btn btn-secondary" style={{ width: '100%' }}>
-                Buy Individual License
-              </a>
-            ) : (
-              <button onClick={() => setDownloadModalOpen(true)} className="btn btn-secondary" style={{ width: '100%' }}>
-                Buy Individual License
-              </button>
-            )}
+            <button onClick={() => {
+              setCheckoutName('')
+              setCheckoutEmail('')
+              setCheckoutOrg('')
+              setCheckoutUpiId('')
+              setCheckoutCardNumber('')
+              setCheckoutCardExpiry('')
+              setCheckoutCardCvv('')
+              setCheckoutStep('info')
+              setCheckoutError('')
+              setCheckoutModalOpen(true)
+            }} className="btn btn-secondary" style={{ width: '100%' }}>
+              Buy Individual License
+            </button>
           </div>
 
           <div className="card pricing-card">
@@ -1434,6 +1342,293 @@ Razorpay Payment ID: ${paymentId}`,
             <div style={{ marginTop: '28px', fontSize: '0.85rem', color: 'var(--text-dim)', textAlign: 'center' }}>
               Need help? View our <a href="https://simlab.frissco.net/docs" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>Installation Documentation</a>.
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 11. Custom Checkout Payment Gateway Modal */}
+      {checkoutModalOpen && (
+        <div className="modal-overlay" onClick={() => !isSubmittingCheckout && setCheckoutModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <button className="modal-close" disabled={isSubmittingCheckout} onClick={() => setCheckoutModalOpen(false)}>
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span className="badge badge-blue">Secure Checkout</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Powered by Frissco Gateway</span>
+            </div>
+
+            <h3 style={{ marginBottom: '8px', fontSize: '1.4rem' }}>Buy SimLab Individual License</h3>
+            <p style={{ fontSize: '0.85rem', marginBottom: '20px', color: 'var(--text-dim)' }}>
+              Get instant access to advanced simulators, chaos engineering dashboards, and reports.
+            </p>
+
+            <form onSubmit={handleCheckoutSubmit}>
+              {checkoutStep === 'info' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="form-group">
+                    <label htmlFor="chkName">Full Name</label>
+                    <input 
+                      type="text" 
+                      id="chkName" 
+                      required 
+                      value={checkoutName} 
+                      onChange={(e) => setCheckoutName(e.target.value)} 
+                      className="form-input" 
+                      placeholder="e.g. Sidharth"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="chkEmail">Email Address</label>
+                    <input 
+                      type="email" 
+                      id="chkEmail" 
+                      required 
+                      value={checkoutEmail} 
+                      onChange={(e) => setCheckoutEmail(e.target.value)} 
+                      className="form-input" 
+                      placeholder="e.g. sid@example.com"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="chkOrg">Organization / University (Optional)</label>
+                    <input 
+                      type="text" 
+                      id="chkOrg" 
+                      value={checkoutOrg} 
+                      onChange={(e) => setCheckoutOrg(e.target.value)} 
+                      className="form-input" 
+                      placeholder="e.g. Stanford University"
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+                    Continue to Payment
+                  </button>
+                </div>
+              )}
+
+              {checkoutStep === 'payment' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Order Summary */}
+                  <div style={{
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    padding: '12px 16px', 
+                    background: 'rgba(255, 255, 255, 0.02)', 
+                    border: '1px solid var(--surface-0)', 
+                    borderRadius: '10px'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Total Amount</span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-heading)' }}>Rs 1,843</span>
+                  </div>
+
+                  {/* Payment Tabs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setCheckoutMethod('upi')}
+                      style={{
+                        padding: '10px 4px',
+                        borderRadius: '8px',
+                        border: '1px solid',
+                        borderColor: checkoutMethod === 'upi' ? 'var(--accent-lavender)' : 'var(--surface-0)',
+                        background: checkoutMethod === 'upi' ? 'rgba(180, 190, 254, 0.05)' : 'transparent',
+                        color: checkoutMethod === 'upi' ? 'var(--accent-lavender)' : 'var(--text-dim)',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <QrCode size={18} />
+                      <span>UPI</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setCheckoutMethod('card')}
+                      style={{
+                        padding: '10px 4px',
+                        borderRadius: '8px',
+                        border: '1px solid',
+                        borderColor: checkoutMethod === 'card' ? 'var(--accent-lavender)' : 'var(--surface-0)',
+                        background: checkoutMethod === 'card' ? 'rgba(180, 190, 254, 0.05)' : 'transparent',
+                        color: checkoutMethod === 'card' ? 'var(--accent-lavender)' : 'var(--text-dim)',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <CreditCard size={18} />
+                      <span>Card</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setCheckoutMethod('netbanking')}
+                      style={{
+                        padding: '10px 4px',
+                        borderRadius: '8px',
+                        border: '1px solid',
+                        borderColor: checkoutMethod === 'netbanking' ? 'var(--accent-lavender)' : 'var(--surface-0)',
+                        background: checkoutMethod === 'netbanking' ? 'rgba(180, 190, 254, 0.05)' : 'transparent',
+                        color: checkoutMethod === 'netbanking' ? 'var(--accent-lavender)' : 'var(--text-dim)',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Building size={18} />
+                      <span>Net Banking</span>
+                    </button>
+                  </div>
+
+                  {/* Payment Details Form */}
+                  <div style={{ minHeight: '130px' }}>
+                    {checkoutMethod === 'upi' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className="form-group">
+                          <label htmlFor="chkUpi">UPI ID (e.g. username@upi)</label>
+                          <input 
+                            type="text" 
+                            id="chkUpi" 
+                            required={checkoutMethod === 'upi'}
+                            value={checkoutUpiId} 
+                            onChange={(e) => setCheckoutUpiId(e.target.value)} 
+                            className="form-input" 
+                            placeholder="username@upi"
+                          />
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.75rem', 
+                          color: 'var(--text-dim)', 
+                          textAlign: 'center', 
+                          padding: '8px', 
+                          border: '1px dashed var(--surface-0)',
+                          borderRadius: '8px',
+                          background: 'rgba(255,255,255,0.01)'
+                        }}>
+                          🔒 Fast and secure verification will be initiated on submit.
+                        </div>
+                      </div>
+                    )}
+
+                    {checkoutMethod === 'card' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className="form-group">
+                          <label htmlFor="chkCardNo">Card Number</label>
+                          <input 
+                            type="text" 
+                            id="chkCardNo" 
+                            required={checkoutMethod === 'card'}
+                            value={checkoutCardNumber} 
+                            maxLength={16}
+                            onChange={(e) => setCheckoutCardNumber(e.target.value.replace(/\D/g, ''))} 
+                            className="form-input" 
+                            placeholder="4111 2222 3333 4444"
+                          />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                          <div className="form-group">
+                            <label htmlFor="chkCardExp">Expiry Date</label>
+                            <input 
+                              type="text" 
+                              id="chkCardExp" 
+                              required={checkoutMethod === 'card'}
+                              value={checkoutCardExpiry} 
+                              maxLength={5}
+                              onChange={(e) => setCheckoutCardExpiry(e.target.value)} 
+                              className="form-input" 
+                              placeholder="MM/YY"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label htmlFor="chkCardCvv">CVV</label>
+                            <input 
+                              type="password" 
+                              id="chkCardCvv" 
+                              required={checkoutMethod === 'card'}
+                              value={checkoutCardCvv} 
+                              maxLength={3}
+                              onChange={(e) => setCheckoutCardCvv(e.target.value.replace(/\D/g, ''))} 
+                              className="form-input" 
+                              placeholder="123"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {checkoutMethod === 'netbanking' && (
+                      <div className="form-group">
+                        <label htmlFor="chkNetBank">Select Bank</label>
+                        <select 
+                          id="chkNetBank" 
+                          value={checkoutNetBank} 
+                          onChange={(e) => setCheckoutNetBank(e.target.value)}
+                          className="form-input"
+                          style={{ background: 'var(--bg-crust)', border: '1px solid var(--surface-0)', color: 'var(--text-heading)' }}
+                        >
+                          <option value="sbi">State Bank of India</option>
+                          <option value="hdfc">HDFC Bank</option>
+                          <option value="icici">ICICI Bank</option>
+                          <option value="axis">Axis Bank</option>
+                          <option value="kotak">Kotak Mahindra Bank</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {checkoutError && (
+                    <p style={{ color: 'var(--accent-red)', fontSize: '0.85rem', margin: '0' }}>{checkoutError}</p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setCheckoutStep('info')} 
+                      className="btn btn-outline" 
+                      style={{ flex: 1 }}
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary" 
+                      style={{ flex: 1.5 }}
+                    >
+                      Pay Rs 1,843
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {checkoutStep === 'processing' && (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  padding: '40px 0',
+                  gap: '16px'
+                }}>
+                  <Loader2 className="animate-spin text-accent" size={40} />
+                  <p style={{ fontSize: '1rem', color: 'var(--text-heading)', fontWeight: '500' }}>{processingStatus}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Please do not close this window or refresh the page.</p>
+                </div>
+              )}
+            </form>
           </div>
         </div>
       )}

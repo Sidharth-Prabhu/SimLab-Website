@@ -1909,4 +1909,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .mb-4 { margin-bottom: 16px; }
 .text-accent { color: var(--accent-lavender); }
 
+/* Spin animation utility */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 

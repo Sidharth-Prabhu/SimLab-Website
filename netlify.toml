@@ -3,16 +3,6 @@
   publish = "dist"
 
 [[redirects]]
-  from = "/purchase-success"
-  to = "/.netlify/functions/payment-redirect"
-  status = 200
-
-[[redirects]]
-  from = "/payment-webhook"
-  to = "/.netlify/functions/payment-webhook"
-  status = 200
-
-[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
