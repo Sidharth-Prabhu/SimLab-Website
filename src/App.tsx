@@ -184,21 +184,13 @@ function App() {
   const [purchaseView, setPurchaseView] = useState<PurchaseView>(() =>
     window.location.hash.startsWith('#/purchase-success') ? 'purchase-success' : 'landing'
   )
-  // Checkout Modal & Gateway states
+  // Checkout Modal states
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false)
-  const [checkoutStep, setCheckoutStep] = useState<'info' | 'payment' | 'processing'>('info')
   const [checkoutName, setCheckoutName] = useState('')
   const [checkoutEmail, setCheckoutEmail] = useState('')
   const [checkoutOrg, setCheckoutOrg] = useState('')
-  const [checkoutMethod, setCheckoutMethod] = useState<'upi' | 'card' | 'netbanking'>('upi')
-  const [checkoutCardNumber, setCheckoutCardNumber] = useState('')
-  const [checkoutCardExpiry, setCheckoutCardExpiry] = useState('')
-  const [checkoutCardCvv, setCheckoutCardCvv] = useState('')
-  const [checkoutUpiId, setCheckoutUpiId] = useState('')
-  const [checkoutNetBank, setCheckoutNetBank] = useState('sbi')
   const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
-  const [processingStatus, setProcessingStatus] = useState('')
 
 
 
@@ -285,40 +277,14 @@ function App() {
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (checkoutStep === 'info') {
-      if (!checkoutName.trim() || !checkoutEmail.trim()) {
-        setCheckoutError('Name and Email are required.')
-        return
-      }
-      setCheckoutError('')
-      setCheckoutStep('payment')
+    if (!checkoutName.trim() || !checkoutEmail.trim()) {
+      setCheckoutError('Name and Email are required.')
       return
     }
-
-    setCheckoutStep('processing')
     setCheckoutError('')
     setIsSubmittingCheckout(true)
 
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
     try {
-      setProcessingStatus('Securing connection...')
-      await delay(800)
-      setProcessingStatus('Authorizing transaction with bank...')
-      await delay(900)
-      setProcessingStatus('Finalizing order...')
-      await delay(500)
-
-      let paymentDetailStr = ''
-      if (checkoutMethod === 'upi') {
-        paymentDetailStr = `UPI ID: ${checkoutUpiId || 'Simulated UPI Pay'}`
-      } else if (checkoutMethod === 'card') {
-        const maskedCard = checkoutCardNumber ? `Card ending in ${checkoutCardNumber.slice(-4)}` : 'Simulated Card'
-        paymentDetailStr = maskedCard
-      } else {
-        paymentDetailStr = `Net Banking (Bank: ${checkoutNetBank.toUpperCase()})`
-      }
-
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: {
@@ -328,10 +294,10 @@ function App() {
         body: JSON.stringify({
           access_key: web3FormsAccessKey,
           subject: `[SimLab Order] Individual License Request - ${checkoutName}`,
-          from_name: 'SimLab Checkout Gateway',
+          from_name: 'SimLab License Checkout',
           name: checkoutName,
           email: checkoutEmail,
-          message: `Hello! A new payment order has been submitted for Frissco SimLab.
+          message: `Hello! A new license request order has been submitted for Frissco SimLab.
 
 Customer Name: ${checkoutName}
 Customer Email: ${checkoutEmail}
@@ -339,10 +305,7 @@ Organization: ${checkoutOrg || 'None'}
 
 Order details:
 - Plan: Individual License
-- Price: Rs 1843
-- Payment Method: ${checkoutMethod.toUpperCase()}
-- Payment Details: ${paymentDetailStr}
-- Status: Simulated Payment Success`
+- Price: Rs 1843 (Request submitted)`
         }),
       })
 
@@ -352,19 +315,13 @@ Order details:
       }
 
       setCheckoutModalOpen(false)
-      setCheckoutStep('info')
       setCheckoutName('')
       setCheckoutEmail('')
       setCheckoutOrg('')
-      setCheckoutUpiId('')
-      setCheckoutCardNumber('')
-      setCheckoutCardExpiry('')
-      setCheckoutCardCvv('')
       
       window.location.hash = '#/purchase-success'
     } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : 'Transaction failed. Please try again.')
-      setCheckoutStep('payment')
+      setCheckoutError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
     } finally {
       setIsSubmittingCheckout(false)
     }
@@ -1116,11 +1073,6 @@ Order details:
               setCheckoutName('')
               setCheckoutEmail('')
               setCheckoutOrg('')
-              setCheckoutUpiId('')
-              setCheckoutCardNumber('')
-              setCheckoutCardExpiry('')
-              setCheckoutCardCvv('')
-              setCheckoutStep('info')
               setCheckoutError('')
               setCheckoutModalOpen(true)
             }} className="btn btn-secondary" style={{ width: '100%' }}>
@@ -1355,279 +1307,75 @@ Order details:
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <span className="badge badge-blue">Secure Checkout</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Powered by Frissco Gateway</span>
+              <span className="badge badge-blue">Individual License</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Request Form</span>
             </div>
 
-            <h3 style={{ marginBottom: '8px', fontSize: '1.4rem' }}>Buy SimLab Individual License</h3>
+            <h3 style={{ marginBottom: '8px', fontSize: '1.4rem' }}>Request SimLab License</h3>
             <p style={{ fontSize: '0.85rem', marginBottom: '20px', color: 'var(--text-dim)' }}>
-              Get instant access to advanced simulators, chaos engineering dashboards, and reports.
+              Enter your details below to request your individual license key. Your activation key and build links will be dispatched to this email.
             </p>
 
             <form onSubmit={handleCheckoutSubmit}>
-              {checkoutStep === 'info' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div className="form-group">
-                    <label htmlFor="chkName">Full Name</label>
-                    <input 
-                      type="text" 
-                      id="chkName" 
-                      required 
-                      value={checkoutName} 
-                      onChange={(e) => setCheckoutName(e.target.value)} 
-                      className="form-input" 
-                      placeholder="e.g. Sidharth"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="chkEmail">Email Address</label>
-                    <input 
-                      type="email" 
-                      id="chkEmail" 
-                      required 
-                      value={checkoutEmail} 
-                      onChange={(e) => setCheckoutEmail(e.target.value)} 
-                      className="form-input" 
-                      placeholder="e.g. sid@example.com"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="chkOrg">Organization / University (Optional)</label>
-                    <input 
-                      type="text" 
-                      id="chkOrg" 
-                      value={checkoutOrg} 
-                      onChange={(e) => setCheckoutOrg(e.target.value)} 
-                      className="form-input" 
-                      placeholder="e.g. Stanford University"
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
-                    Continue to Payment
-                  </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="form-group">
+                  <label htmlFor="chkName">Full Name</label>
+                  <input 
+                    type="text" 
+                    id="chkName" 
+                    required 
+                    value={checkoutName} 
+                    onChange={(e) => setCheckoutName(e.target.value)} 
+                    className="form-input" 
+                    placeholder="e.g. Sidharth"
+                  />
                 </div>
-              )}
-
-              {checkoutStep === 'payment' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {/* Order Summary */}
-                  <div style={{
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    padding: '12px 16px', 
-                    background: 'rgba(255, 255, 255, 0.02)', 
-                    border: '1px solid var(--surface-0)', 
-                    borderRadius: '10px'
-                  }}>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Total Amount</span>
-                    <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-heading)' }}>Rs 1,843</span>
-                  </div>
-
-                  {/* Payment Tabs */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    <button 
-                      type="button" 
-                      onClick={() => setCheckoutMethod('upi')}
-                      style={{
-                        padding: '10px 4px',
-                        borderRadius: '8px',
-                        border: '1px solid',
-                        borderColor: checkoutMethod === 'upi' ? 'var(--accent-lavender)' : 'var(--surface-0)',
-                        background: checkoutMethod === 'upi' ? 'rgba(180, 190, 254, 0.05)' : 'transparent',
-                        color: checkoutMethod === 'upi' ? 'var(--accent-lavender)' : 'var(--text-dim)',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <QrCode size={18} />
-                      <span>UPI</span>
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setCheckoutMethod('card')}
-                      style={{
-                        padding: '10px 4px',
-                        borderRadius: '8px',
-                        border: '1px solid',
-                        borderColor: checkoutMethod === 'card' ? 'var(--accent-lavender)' : 'var(--surface-0)',
-                        background: checkoutMethod === 'card' ? 'rgba(180, 190, 254, 0.05)' : 'transparent',
-                        color: checkoutMethod === 'card' ? 'var(--accent-lavender)' : 'var(--text-dim)',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <CreditCard size={18} />
-                      <span>Card</span>
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setCheckoutMethod('netbanking')}
-                      style={{
-                        padding: '10px 4px',
-                        borderRadius: '8px',
-                        border: '1px solid',
-                        borderColor: checkoutMethod === 'netbanking' ? 'var(--accent-lavender)' : 'var(--surface-0)',
-                        background: checkoutMethod === 'netbanking' ? 'rgba(180, 190, 254, 0.05)' : 'transparent',
-                        color: checkoutMethod === 'netbanking' ? 'var(--accent-lavender)' : 'var(--text-dim)',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <Building size={18} />
-                      <span>Net Banking</span>
-                    </button>
-                  </div>
-
-                  {/* Payment Details Form */}
-                  <div style={{ minHeight: '130px' }}>
-                    {checkoutMethod === 'upi' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div className="form-group">
-                          <label htmlFor="chkUpi">UPI ID (e.g. username@upi)</label>
-                          <input 
-                            type="text" 
-                            id="chkUpi" 
-                            required={checkoutMethod === 'upi'}
-                            value={checkoutUpiId} 
-                            onChange={(e) => setCheckoutUpiId(e.target.value)} 
-                            className="form-input" 
-                            placeholder="username@upi"
-                          />
-                        </div>
-                        <div style={{ 
-                          fontSize: '0.75rem', 
-                          color: 'var(--text-dim)', 
-                          textAlign: 'center', 
-                          padding: '8px', 
-                          border: '1px dashed var(--surface-0)',
-                          borderRadius: '8px',
-                          background: 'rgba(255,255,255,0.01)'
-                        }}>
-                          🔒 Fast and secure verification will be initiated on submit.
-                        </div>
-                      </div>
-                    )}
-
-                    {checkoutMethod === 'card' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div className="form-group">
-                          <label htmlFor="chkCardNo">Card Number</label>
-                          <input 
-                            type="text" 
-                            id="chkCardNo" 
-                            required={checkoutMethod === 'card'}
-                            value={checkoutCardNumber} 
-                            maxLength={16}
-                            onChange={(e) => setCheckoutCardNumber(e.target.value.replace(/\D/g, ''))} 
-                            className="form-input" 
-                            placeholder="4111 2222 3333 4444"
-                          />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                          <div className="form-group">
-                            <label htmlFor="chkCardExp">Expiry Date</label>
-                            <input 
-                              type="text" 
-                              id="chkCardExp" 
-                              required={checkoutMethod === 'card'}
-                              value={checkoutCardExpiry} 
-                              maxLength={5}
-                              onChange={(e) => setCheckoutCardExpiry(e.target.value)} 
-                              className="form-input" 
-                              placeholder="MM/YY"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label htmlFor="chkCardCvv">CVV</label>
-                            <input 
-                              type="password" 
-                              id="chkCardCvv" 
-                              required={checkoutMethod === 'card'}
-                              value={checkoutCardCvv} 
-                              maxLength={3}
-                              onChange={(e) => setCheckoutCardCvv(e.target.value.replace(/\D/g, ''))} 
-                              className="form-input" 
-                              placeholder="123"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {checkoutMethod === 'netbanking' && (
-                      <div className="form-group">
-                        <label htmlFor="chkNetBank">Select Bank</label>
-                        <select 
-                          id="chkNetBank" 
-                          value={checkoutNetBank} 
-                          onChange={(e) => setCheckoutNetBank(e.target.value)}
-                          className="form-input"
-                          style={{ background: 'var(--bg-crust)', border: '1px solid var(--surface-0)', color: 'var(--text-heading)' }}
-                        >
-                          <option value="sbi">State Bank of India</option>
-                          <option value="hdfc">HDFC Bank</option>
-                          <option value="icici">ICICI Bank</option>
-                          <option value="axis">Axis Bank</option>
-                          <option value="kotak">Kotak Mahindra Bank</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-
-                  {checkoutError && (
-                    <p style={{ color: 'var(--accent-red)', fontSize: '0.85rem', margin: '0' }}>{checkoutError}</p>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                    <button 
-                      type="button" 
-                      onClick={() => setCheckoutStep('info')} 
-                      className="btn btn-outline" 
-                      style={{ flex: 1 }}
-                    >
-                      Back
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary" 
-                      style={{ flex: 1.5 }}
-                    >
-                      Pay Rs 1,843
-                    </button>
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="chkEmail">Email Address</label>
+                  <input 
+                    type="email" 
+                    id="chkEmail" 
+                    required 
+                    value={checkoutEmail} 
+                    onChange={(e) => setCheckoutEmail(e.target.value)} 
+                    className="form-input" 
+                    placeholder="e.g. sid@example.com"
+                  />
                 </div>
-              )}
+                <div className="form-group">
+                  <label htmlFor="chkOrg">Organization / University (Optional)</label>
+                  <input 
+                    type="text" 
+                    id="chkOrg" 
+                    value={checkoutOrg} 
+                    onChange={(e) => setCheckoutOrg(e.target.value)} 
+                    className="form-input" 
+                    placeholder="e.g. Stanford University"
+                  />
+                </div>
 
-              {checkoutStep === 'processing' && (
-                <div style={{ 
+                <div style={{
                   display: 'flex', 
-                  flexDirection: 'column', 
+                  justifyContent: 'space-between', 
                   alignItems: 'center', 
-                  justifyContent: 'center', 
-                  padding: '40px 0',
-                  gap: '16px'
+                  padding: '12px 16px', 
+                  background: 'rgba(255, 255, 255, 0.02)', 
+                  border: '1px solid var(--surface-0)', 
+                  borderRadius: '10px',
+                  marginTop: '4px'
                 }}>
-                  <Loader2 className="animate-spin text-accent" size={40} />
-                  <p style={{ fontSize: '1rem', color: 'var(--text-heading)', fontWeight: '500' }}>{processingStatus}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Please do not close this window or refresh the page.</p>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>License Cost</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-heading)' }}>Rs 1,843</span>
                 </div>
-              )}
+
+                {checkoutError && (
+                  <p style={{ color: 'var(--accent-red)', fontSize: '0.85rem', margin: '0' }}>{checkoutError}</p>
+                )}
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={isSubmittingCheckout}>
+                  {isSubmittingCheckout ? 'Submitting Request...' : 'Submit Request'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
