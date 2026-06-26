@@ -717,134 +717,43 @@ function App() {
   if (purchaseView === 'purchase-success') {
     return (
       <section className="container purchase-success-page">
-        <div className="purchase-success-shell card">
-          <span className="badge badge-green">Purchase Successful</span>
-          <h1 className="purchase-success-title">Your Frissco SimLab license</h1>
+        <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '32px' }}>
+          <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-green)', color: 'var(--accent-green)', background: 'rgba(166, 227, 161, 0.1)', boxShadow: '0 0 20px rgba(166, 227, 161, 0.2)' }}>
+            <Check size={32} />
+          </div>
           
-          {paymentId && !issuedLicense && (
-            <p className="purchase-success-copy">
-              Your payment has been verified (ID: {paymentId}). Please enter your licensee name and email below to generate your cryptographically signed activation key.
-            </p>
-          )}
+          <span className="badge badge-green" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Purchase Successful</span>
+          
+          <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #fff 0%, var(--text-dim) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Thank you for purchasing Frissco SimLab
+          </h1>
+          
+          <p className="purchase-success-copy" style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-primary)', maxWidth: '600px', margin: '0 auto' }}>
+            You will get your download through your mail within <strong>24 Hours</strong>.
+          </p>
 
-          {issuedLicense && (
-            <p className="purchase-success-copy">
-              Your activation key has been successfully generated. Please copy and store it somewhere safe.
-            </p>
-          )}
+          <div style={{
+            width: '100%',
+            maxWidth: '500px',
+            margin: '20px auto 0',
+            padding: '24px',
+            borderRadius: '16px',
+            border: '1px solid var(--surface-0)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <Mail size={24} style={{ color: 'var(--accent-lavender)' }} />
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>For further queries, contact:</span>
+            <a href="mailto:thefrisscoteamofficial@gmail.com" style={{ fontSize: '1.1rem', color: 'var(--accent-lavender)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px dashed var(--accent-lavender)', paddingBottom: '2px' }}>
+              thefrisscoteamofficial@gmail.com
+            </a>
+          </div>
 
-          {!paymentId && (
-            <div style={{ marginTop: '24px', width: '100%' }}>
-              <div className="purchase-status-panel purchase-status-error" style={{ marginBottom: '20px' }}>
-                <p>Payment reference was not detected automatically from the redirection URL.</p>
-                <p className="purchase-status-help" style={{ marginTop: '8px' }}>
-                  This can happen if the browser redirected without query parameters or if the redirect was configured as a POST request.
-                </p>
-              </div>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const inputId = (e.currentTarget.elements.namedItem('manualPaymentId') as HTMLInputElement).value.trim();
-                if (inputId) {
-                  setPaymentId(inputId);
-                  setLicenseError('');
-                }
-              }} className="contact-form" style={{ width: '100%', maxWidth: '100%' }}>
-                <div className="form-group">
-                  <label htmlFor="manualPaymentId">Enter Payment ID Manually</label>
-                  <input
-                    type="text"
-                    id="manualPaymentId"
-                    name="manualPaymentId"
-                    required
-                    className="form-input"
-                    placeholder="e.g. pay_Oky3C1F4wzJ3hC"
-                  />
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '6px', display: 'block' }}>
-                    You can find this ID in your Razorpay email receipt or SMS confirmation.
-                  </span>
-                </div>
-                <button type="submit" className="btn btn-secondary" style={{ marginTop: '16px', width: '100%' }}>
-                  Verify & Continue
-                </button>
-              </form>
-            </div>
-          )}
-
-          {licenseLoading && (
-            <div className="purchase-status-panel">
-              <p>Generating your activation key...</p>
-            </div>
-          )}
-
-          {!licenseLoading && licenseError && (
-            <div className="purchase-status-panel purchase-status-error">
-              <p>{licenseError}</p>
-              <p className="purchase-status-help">
-                If Razorpay shows the payment as successful, do not pay again. Keep your payment reference and contact support if needed.
-              </p>
-            </div>
-          )}
-
-          {!licenseLoading && !licenseError && !issuedLicense && paymentId && (
-            <form onSubmit={handleGenerateLicenseClientSide} className="contact-form" style={{ margin: '24px 0 0 0', width: '100%', maxWidth: '100%' }}>
-              <div className="form-group">
-                <label htmlFor="buyerName">Licensee Name</label>
-                <input
-                  type="text"
-                  id="buyerName"
-                  required
-                  value={buyerName}
-                  onChange={(e) => setBuyerName(e.target.value)}
-                  className="form-input"
-                  placeholder="e.g. Sidharth"
-                />
-              </div>
-              <div className="form-group" style={{ marginTop: '16px' }}>
-                <label htmlFor="buyerEmail">Licensee Email</label>
-                <input
-                  type="email"
-                  id="buyerEmail"
-                  required
-                  value={buyerEmail}
-                  onChange={(e) => setBuyerEmail(e.target.value)}
-                  className="form-input"
-                  placeholder="e.g. sid@example.com"
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ marginTop: '24px', width: '100%' }}>
-                Generate License Key
-              </button>
-            </form>
-          )}
-
-          {!licenseLoading && issuedLicense && (
-            <>
-              <div className="purchase-license-meta">
-                <div><strong>Licensee:</strong> {issuedLicense.user || 'Licensed User'}</div>
-                <div><strong>Email:</strong> {issuedLicense.email || 'Provided at checkout'}</div>
-                <div><strong>Expiry:</strong> {issuedLicense.expiry || 'Included in the issued key'}</div>
-              </div>
-
-              <div className="purchase-license-box">
-                <button
-                  onClick={() => copyToClipboard(issuedLicense.licenseKey, 'license')}
-                  className="copy-btn purchase-copy-btn"
-                  type="button"
-                >
-                  {copiedText === 'license' ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-                <pre className="purchase-license-pre"><code>{issuedLicense.licenseKey}</code></pre>
-              </div>
-
-              <div className="purchase-warning">
-                <AlertTriangle size={18} />
-                <p>Kindly store this License Key somewhere safe to not lose it.</p>
-              </div>
-            </>
-          )}
-
-          <div className="purchase-success-actions">
-            <a href="#" className="btn btn-secondary">Back to site</a>
+          <div className="purchase-success-actions" style={{ marginTop: '12px' }}>
+            <a href="#" className="btn btn-primary">Back to site</a>
             <a href="#contact" className="btn btn-outline">Need help?</a>
           </div>
         </div>
