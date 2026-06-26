@@ -4,9 +4,14 @@ exports.handler = async (event) => {
   let paymentId = '';
 
   try {
-    if (event.body) {
+    let bodyText = event.body || '';
+    if (event.isBase64Encoded && bodyText) {
+      bodyText = Buffer.from(bodyText, 'base64').toString('utf8');
+    }
+
+    if (bodyText) {
       // Parse the POST request body (typically application/x-www-form-urlencoded)
-      const params = querystring.parse(event.body);
+      const params = querystring.parse(bodyText);
       paymentId = params.razorpay_payment_id || params.payment_id || params.razorpay_payment_link_id || '';
     }
 

@@ -90,7 +90,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    const rawBody = event.body || '';
+    let rawBody = event.body || '';
+    if (event.isBase64Encoded && rawBody) {
+      rawBody = Buffer.from(rawBody, 'base64').toString('utf8');
+    }
     const body = JSON.parse(rawBody);
     
     // 1. Check signature if secret is configured
