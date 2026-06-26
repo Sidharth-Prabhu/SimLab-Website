@@ -185,7 +185,11 @@ function App() {
   const [licenseError, setLicenseError] = useState('')
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
+  const [buyerOrg, setBuyerOrg] = useState('')
   const [paymentId, setPaymentId] = useState('')
+  const [purchaseFormSubmitted, setPurchaseFormSubmitted] = useState(false)
+  const [purchaseFormSubmitting, setPurchaseFormSubmitting] = useState(false)
+  const [purchaseFormError, setPurchaseFormError] = useState('')
 
 
 
@@ -305,54 +309,57 @@ function App() {
 
     const payId = getPaymentId();
 
-    if (!payId) {
-      return
+    if (payId) {
+      setPaymentId(payId);
+      // Immediately clear URL query parameters to prevent direct copy-pasting and bookmarking
+      const cleanUrl = window.location.origin + window.location.pathname + '#/purchase-success';
+      window.history.replaceState({}, document.title, cleanUrl);
     }
-
-    setPaymentId(payId)
   }, [purchaseView])
 
-  const handleGenerateLicenseClientSide = async (e: React.FormEvent) => {
+  const handleLicenseFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!buyerName.trim() || !buyerEmail.trim()) {
-      setLicenseError('Name and Email are required to generate your license.')
+      setPurchaseFormError('Name and Email are required.')
       return
     }
-    if (!paymentId) {
-      setLicenseError('Payment reference is missing. Please enter your Payment ID.')
-      return
-    }
-    setLicenseLoading(true)
-    setLicenseError('')
+    setPurchaseFormSubmitting(true)
+    setPurchaseFormError('')
+
     try {
-      const response = await fetch('/.netlify/functions/verify-payment', {
+      const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({
-          paymentId: paymentId.trim(),
+          access_key: web3FormsAccessKey,
+          subject: `SimLab License Request - Payment ID: ${paymentId}`,
+          from_name: 'SimLab Checkout Form',
           name: buyerName.trim(),
           email: buyerEmail.trim(),
+          organization: buyerOrg.trim(),
+          message: `License details submitted by customer:
+          
+Customer Name: ${buyerName.trim()}
+Customer Email: ${buyerEmail.trim()}
+Organization: ${buyerOrg.trim() || 'None'}
+Razorpay Payment ID: ${paymentId}`,
         }),
       })
 
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to verify payment and generate license.')
+        throw new Error(result.message || 'Unable to submit your details at this time.')
       }
 
-      setIssuedLicense({
-        licenseKey: result.licenseKey,
-        user: result.data.user,
-        email: result.data.email,
-        expiry: result.data.expiry
-      })
-    } catch (err) {
-      setLicenseError(err instanceof Error ? err.message : 'Failed to verify payment. Please check your Payment ID and credentials.')
+      setPurchaseFormSubmitted(true)
+    } catch (error) {
+      setPurchaseFormError(error instanceof Error ? error.message : 'Unable to submit your details right now.')
     } finally {
-      setLicenseLoading(false)
+      setPurchaseFormSubmitting(false)
     }
   }
 
@@ -715,47 +722,151 @@ function App() {
   }
 
   if (purchaseView === 'purchase-success') {
+    // 1. Access Denied: User did not redirect from Razorpay (no paymentId in state)
+    if (!paymentId) {
+      return (
+        <section className="container purchase-success-page">
+          <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '24px' }}>
+            <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-red)', color: 'var(--accent-red)', background: 'rgba(243, 139, 168, 0.1)', boxShadow: '0 0 20px rgba(243, 139, 168, 0.2)' }}>
+              <X size={32} />
+            </div>
+            
+            <span className="badge badge-red" style={{ textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-red)', borderColor: 'var(--accent-red)' }}>Access Denied</span>
+            
+            <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+              Invalid Reference
+            </h1>
+            
+            <p className="purchase-success-copy" style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'var(--text-dim)', maxWidth: '550px', margin: '0 auto' }}>
+              This page can only be accessed directly after a completed payment redirection. If you've already completed checkout, please check your mailbox or contact our support team.
+            </p>
+
+            <div className="purchase-success-actions" style={{ marginTop: '16px' }}>
+              <a href="#" className="btn btn-primary">Back to site</a>
+              <a href="#contact" className="btn btn-outline">Need help?</a>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    // 2. Form Submitted: Show thank you page
+    if (purchaseFormSubmitted) {
+      return (
+        <section className="container purchase-success-page">
+          <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '32px' }}>
+            <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-green)', color: 'var(--accent-green)', background: 'rgba(166, 227, 161, 0.1)', boxShadow: '0 0 20px rgba(166, 227, 161, 0.2)' }}>
+              <Check size={32} />
+            </div>
+            
+            <span className="badge badge-green" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Registration Complete</span>
+            
+            <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #fff 0%, var(--text-dim) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Thank you for purchasing Frissco SimLab
+            </h1>
+            
+            <p className="purchase-success-copy" style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-primary)', maxWidth: '600px', margin: '0 auto' }}>
+              You will get your download through your mail within <strong>24 Hours</strong>.
+            </p>
+
+            <div style={{
+              width: '100%',
+              maxWidth: '500px',
+              margin: '20px auto 0',
+              padding: '24px',
+              borderRadius: '16px',
+              border: '1px solid var(--surface-0)',
+              background: 'rgba(255, 255, 255, 0.02)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <Mail size={24} style={{ color: 'var(--accent-lavender)' }} />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>For further queries, contact:</span>
+              <a href="mailto:thefrisscoteamofficial@gmail.com" style={{ fontSize: '1.1rem', color: 'var(--accent-lavender)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px dashed var(--accent-lavender)', paddingBottom: '2px' }}>
+                thefrisscoteamofficial@gmail.com
+              </a>
+            </div>
+
+            <div className="purchase-success-actions" style={{ marginTop: '12px' }}>
+              <a href="#" className="btn btn-primary">Back to site</a>
+              <a href="#contact" className="btn btn-outline">Need help?</a>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    // 3. Form Input: Show Details Form
     return (
       <section className="container purchase-success-page">
-        <div className="purchase-success-shell card" style={{ textAlign: 'center', alignItems: 'center', padding: '60px 40px', gap: '32px' }}>
-          <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-green)', color: 'var(--accent-green)', background: 'rgba(166, 227, 161, 0.1)', boxShadow: '0 0 20px rgba(166, 227, 161, 0.2)' }}>
-            <Check size={32} />
-          </div>
-          
-          <span className="badge badge-green" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Purchase Successful</span>
-          
-          <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #fff 0%, var(--text-dim) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Thank you for purchasing Frissco SimLab
-          </h1>
-          
-          <p className="purchase-success-copy" style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-primary)', maxWidth: '600px', margin: '0 auto' }}>
-            You will get your download through your mail within <strong>24 Hours</strong>.
+        <div className="purchase-success-shell card" style={{ padding: '48px', maxWidth: '600px', margin: '0 auto' }}>
+          <span className="badge badge-lavender" style={{ textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Final Step</span>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '8px', color: 'var(--text-heading)' }}>Activate License</h2>
+          <p style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '32px', lineHeight: '1.5' }}>
+            Please fill out your details to register your copy of Frissco SimLab. Your activation key and build links will be issued to this email.
           </p>
 
-          <div style={{
-            width: '100%',
-            maxWidth: '500px',
-            margin: '20px auto 0',
-            padding: '24px',
-            borderRadius: '16px',
-            border: '1px solid var(--surface-0)',
-            background: 'rgba(255, 255, 255, 0.02)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <Mail size={24} style={{ color: 'var(--accent-lavender)' }} />
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>For further queries, contact:</span>
-            <a href="mailto:thefrisscoteamofficial@gmail.com" style={{ fontSize: '1.1rem', color: 'var(--accent-lavender)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px dashed var(--accent-lavender)', paddingBottom: '2px' }}>
-              thefrisscoteamofficial@gmail.com
-            </a>
-          </div>
+          <form onSubmit={handleLicenseFormSubmit} className="contact-form" style={{ width: '100%', maxWidth: '100%' }}>
+            <div className="form-group">
+              <label htmlFor="buyerName">Licensee Name</label>
+              <input
+                type="text"
+                id="buyerName"
+                required
+                value={buyerName}
+                onChange={(e) => setBuyerName(e.target.value)}
+                className="form-input"
+                placeholder="e.g. Sidharth"
+              />
+            </div>
+            
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label htmlFor="buyerEmail">Licensee Email</label>
+              <input
+                type="email"
+                id="buyerEmail"
+                required
+                value={buyerEmail}
+                onChange={(e) => setBuyerEmail(e.target.value)}
+                className="form-input"
+                placeholder="e.g. sid@example.com"
+              />
+            </div>
 
-          <div className="purchase-success-actions" style={{ marginTop: '12px' }}>
-            <a href="#" className="btn btn-primary">Back to site</a>
-            <a href="#contact" className="btn btn-outline">Need help?</a>
-          </div>
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label htmlFor="buyerOrg">Organization / University (Optional)</label>
+              <input
+                type="text"
+                id="buyerOrg"
+                value={buyerOrg}
+                onChange={(e) => setBuyerOrg(e.target.value)}
+                className="form-input"
+                placeholder="e.g. Stanford University"
+              />
+            </div>
+
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label htmlFor="refPaymentId">Payment ID Reference</label>
+              <input
+                type="text"
+                id="refPaymentId"
+                disabled
+                value={paymentId}
+                className="form-input"
+                style={{ opacity: 0.6, cursor: 'not-allowed', backgroundColor: 'var(--bg-crust)' }}
+              />
+            </div>
+
+            {purchaseFormError && (
+              <p style={{ color: 'var(--accent-red)', fontSize: '0.9rem', marginTop: '12px' }}>{purchaseFormError}</p>
+            )}
+
+            <button type="submit" className="btn btn-primary" style={{ marginTop: '32px', width: '100%' }} disabled={purchaseFormSubmitting}>
+              {purchaseFormSubmitting ? 'Registering...' : 'Confirm & Activate'}
+            </button>
+          </form>
         </div>
       </section>
     )
