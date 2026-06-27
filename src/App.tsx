@@ -214,6 +214,14 @@ function App() {
   const [successFormSubmitted, setSuccessFormSubmitted] = useState(false)
   const [successFormError, setSuccessFormError] = useState('')
 
+  // Free Registration Modal states
+  const [freeModalOpen, setFreeModalOpen] = useState(false)
+  const [freeName, setFreeName] = useState('')
+  const [freeEmail, setFreeEmail] = useState('')
+  const [freeOrg, setFreeOrg] = useState('')
+  const [isSubmittingFree, setIsSubmittingFree] = useState(false)
+  const [freeError, setFreeError] = useState('')
+
 
 
   // 2. Protocol Labs Tabs State
@@ -394,10 +402,58 @@ Please issue the license key and send the download link to ${successEmail}.`
       setSuccessEmail('')
       setSuccessOrg('')
       setSuccessPaymentId('')
+      window.location.href = 'https://github.com/Sidharth-Prabhu/SimLab-Website/releases/'
     } catch (err) {
       setSuccessFormError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
     } finally {
       setIsSubmittingSuccessForm(false)
+    }
+  }
+
+  const handleFreeFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!freeName.trim() || !freeEmail.trim()) {
+      setFreeError('Name and Email are required.')
+      return
+    }
+    setFreeError('')
+    setIsSubmittingFree(true)
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: web3FormsAccessKey,
+          subject: `[SimLab Free Sign-Up] ${freeName}`,
+          from_name: 'SimLab Free Plan Registration',
+          name: freeName,
+          email: freeEmail,
+          message: `Hello! A user has registered for the Free Plan of SimLab.
+
+User Name: ${freeName}
+User Email: ${freeEmail}
+Organization: ${freeOrg || 'None'}`
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Unable to submit registration. Please try again.')
+      }
+
+      setFreeModalOpen(false)
+      setFreeName('')
+      setFreeEmail('')
+      setFreeOrg('')
+      window.location.href = 'https://github.com/Sidharth-Prabhu/SimLab-Website/releases/'
+    } catch (err) {
+      setFreeError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
+    } finally {
+      setIsSubmittingFree(false)
     }
   }
 
@@ -916,10 +972,8 @@ Please issue the license key and send the download link to ${successEmail}.`
             <ul className="nav-links">
               <li><a href="#audience">Overview</a></li>
               <li><a href="#features">Features</a></li>
-              <li><a href="#labs">Protocol Labs</a></li>
-              <li><a href="#chaos">Chaos Engine</a></li>
-              <li><a href="#security">Security</a></li>
               <li><a href="#pricing">Pricing</a></li>
+              <li><a href="#contact">Contact</a></li>
               <li><button onClick={() => setDownloadModalOpen(true)} className="btn btn-primary btn-sm" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Download CLI</button></li>
             </ul>
           </nav>
@@ -1213,7 +1267,13 @@ Please issue the license key and send the download link to ${successEmail}.`
               </ul>
             </div>
 
-            <button onClick={() => setDownloadModalOpen(true)} className="btn btn-outline" style={{ width: '100%' }}>
+            <button onClick={() => {
+              setFreeName('')
+              setFreeEmail('')
+              setFreeOrg('')
+              setFreeError('')
+              setFreeModalOpen(true)
+            }} className="btn btn-outline" style={{ width: '100%' }}>
               Start Free
             </button>
           </div>
@@ -1544,6 +1604,75 @@ Please issue the license key and send the download link to ${successEmail}.`
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={isSubmittingCheckout}>
                   {isSubmittingCheckout ? 'Submitting Request...' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 12. Free Plan Registration Modal */}
+      {freeModalOpen && (
+        <div className="modal-overlay" onClick={() => !isSubmittingFree && setFreeModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <button className="modal-close" disabled={isSubmittingFree} onClick={() => setFreeModalOpen(false)}>
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span className="badge badge-green">Free Plan</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Registration Form</span>
+            </div>
+
+            <h3 style={{ marginBottom: '8px', fontSize: '1.4rem' }}>Register for Free Plan</h3>
+            <p style={{ fontSize: '0.85rem', marginBottom: '20px', color: 'var(--text-dim)' }}>
+              Enter your details below to register and download the free plan bundle.
+            </p>
+
+            <form onSubmit={handleFreeFormSubmit}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="form-group">
+                  <label htmlFor="freeName">Full Name</label>
+                  <input 
+                    type="text" 
+                    id="freeName" 
+                    required 
+                    value={freeName} 
+                    onChange={(e) => setFreeName(e.target.value)} 
+                    className="form-input" 
+                    placeholder="e.g. Sidharth"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="freeEmail">Email Address</label>
+                  <input 
+                    type="email" 
+                    id="freeEmail" 
+                    required 
+                    value={freeEmail} 
+                    onChange={(e) => setFreeEmail(e.target.value)} 
+                    className="form-input" 
+                    placeholder="e.g. sid@example.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="freeOrg">Organization / University (Optional)</label>
+                  <input 
+                    type="text" 
+                    id="freeOrg" 
+                    value={freeOrg} 
+                    onChange={(e) => setFreeOrg(e.target.value)} 
+                    className="form-input" 
+                    placeholder="e.g. Stanford University"
+                  />
+                </div>
+
+                {freeError && (
+                  <p style={{ color: 'var(--accent-red)', fontSize: '0.85rem', margin: '0' }}>{freeError}</p>
+                )}
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={isSubmittingFree}>
+                  {isSubmittingFree ? 'Submitting & Redirecting...' : 'Submit & Download'}
                 </button>
               </div>
             </form>

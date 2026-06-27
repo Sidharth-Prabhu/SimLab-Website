@@ -130,7 +130,8 @@ body::after {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 /* Typography */
