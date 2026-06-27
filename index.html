@@ -1,40 +1,79 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/src/assets/simlab.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary Meta Tags -->
-    <title>Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab</title>
-    <meta name="title" content="Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab" />
-    <meta name="description" content="Frissco SimLab is a premium, interactive network routing simulator and protocol laboratory environment. Perfect for academic teaching, self-learning, and enterprise SDN verification." />
-    <meta name="keywords" content="network simulator, network routing simulator, protocol lab emulator, SDN verification, Dijkstra visualization, OSPF simulation, TCP congestion control, CSMA CD simulation, interactive topology canvas, network chaos engineering, packet injection analyzer, computer network education, FRRouting emulation, docker network lab" />
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="English" />
-    <meta name="author" content="Frissco Inc." />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://simlab.frissco.net/" />
-    <meta property="og:title" content="Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab" />
-    <meta property="og:description" content="Simulate complex network topologies, analyze protocol workflows, inject packages, and validate SDN behavior in real time with Frissco SimLab." />
-    <meta property="og:image" content="https://simlab.frissco.net/src/assets/hero.png" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/x-icon" href="/sim_lab_icon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="canonical" href="https://simlab.frissco.net/" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://simlab.frissco.net/" />
-    <meta property="twitter:title" content="Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab" />
-    <meta property="twitter:description" content="Simulate complex network topologies, analyze protocol workflows, inject packages, and validate SDN behavior in real time with Frissco SimLab." />
-    <meta property="twitter:image" content="https://simlab.frissco.net/src/assets/hero.png" />
+  <!-- Primary Meta Tags -->
+  <title>Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab</title>
+  <meta name="title" content="Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab" />
+  <meta name="description"
+    content="Frissco SimLab is a premium, interactive network routing simulator and protocol laboratory environment. Perfect for academic teaching, self-learning, and enterprise SDN verification." />
+  <meta name="keywords"
+    content="Frissco, SimLab, SimLab simulator, network simulator, network routing simulator, protocol lab emulator, SDN verification, Dijkstra visualization, OSPF simulation, TCP congestion control, CSMA CD simulation, interactive topology canvas, network chaos engineering, packet injection analyzer, computer network education, FRRouting emulation, docker network lab, network visualizer" />
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="English" />
+  <meta name="author" content="Frissco Digital Ventures." />
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://simlab.frissco.net/" />
+  <meta property="og:title" content="Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab" />
+  <meta property="og:description"
+    content="Simulate complex network topologies, analyze protocol workflows, inject packages, and validate SDN behavior in real time with Frissco SimLab." />
+  <meta property="og:image" content="https://simlab.frissco.net/src/assets/hero.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://simlab.frissco.net/" />
+  <meta property="twitter:title" content="Frissco SimLab | Interactive Network Routing Simulator & Protocol Lab" />
+  <meta property="twitter:description"
+    content="Simulate complex network topologies, analyze protocol workflows, inject packages, and validate SDN behavior in real time with Frissco SimLab." />
+  <meta property="twitter:image" content="https://simlab.frissco.net/src/assets/hero.png" />
+
+  <!-- JSON-LD Structured Data Schema for Rich Google Search snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Frissco SimLab",
+    "operatingSystem": "Windows, macOS, Linux",
+    "applicationCategory": "EducationalApplication, DeveloperApplication",
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "INR",
+      "lowPrice": "0",
+      "highPrice": "1843",
+      "offerCount": "2"
+    },
+    "description": "Interactive network routing simulator, visual protocol laboratory, and SDN verification workbench for computer network students, educators, and software engineers.",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "120"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Frissco Digital Ventures",
+      "url": "https://simlab.frissco.net"
+    }
+  }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

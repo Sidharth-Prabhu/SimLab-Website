@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
-import { 
-  Activity, 
-  Shield, 
-  Cpu, 
-  Globe, 
-  Check, 
-  Copy, 
-  Download, 
-  Mail, 
-  ExternalLink, 
-  X, 
+import {
+  Activity,
+  Shield,
+  Cpu,
+  Globe,
+  Check,
+  Copy,
+  Download,
+  Mail,
+  ExternalLink,
+  X,
   Server,
   Workflow,
   Send,
@@ -169,7 +169,7 @@ const individualPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL as string
 const licenseIssueApiUrl = import.meta.env.VITE_LICENSE_ISSUE_API_URL as string | undefined
 
 // Client-side routing helper type
-type PurchaseView = 'landing' | 'purchase-success'
+type PurchaseView = 'landing' | 'purchase-success' | 'privacy-policy' | 'terms-of-use'
 
 type IssuedLicense = {
   email?: string
@@ -194,9 +194,13 @@ function App() {
   const [copiedText, setCopiedText] = useState('')
   const [regionalPricing, setRegionalPricing] = useState(getRegionalPricing)
   const [activeFeature, setActiveFeature] = useState(0)
-  const [purchaseView, setPurchaseView] = useState<PurchaseView>(() =>
-    (window.location.hash.startsWith('#/purchase-success') || window.location.hash.startsWith('#/payment-success')) ? 'purchase-success' : 'landing'
-  )
+  const [purchaseView, setPurchaseView] = useState<PurchaseView>(() => {
+    const hash = window.location.hash
+    if (hash.startsWith('#/purchase-success') || hash.startsWith('#/payment-success')) return 'purchase-success'
+    if (hash.startsWith('#/privacy-policy')) return 'privacy-policy'
+    if (hash.startsWith('#/terms-of-use')) return 'terms-of-use'
+    return 'landing'
+  })
   // Checkout Modal states
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false)
   const [checkoutName, setCheckoutName] = useState('')
@@ -298,9 +302,16 @@ function App() {
 
   useEffect(() => {
     const handleHashChange = () => {
-      setPurchaseView(
-        (window.location.hash.startsWith('#/purchase-success') || window.location.hash.startsWith('#/payment-success')) ? 'purchase-success' : 'landing'
-      )
+      const hash = window.location.hash
+      if (hash.startsWith('#/purchase-success') || hash.startsWith('#/payment-success')) {
+        setPurchaseView('purchase-success')
+      } else if (hash.startsWith('#/privacy-policy')) {
+        setPurchaseView('privacy-policy')
+      } else if (hash.startsWith('#/terms-of-use')) {
+        setPurchaseView('terms-of-use')
+      } else {
+        setPurchaseView('landing')
+      }
     }
 
     window.addEventListener('hashchange', handleHashChange)
@@ -350,7 +361,7 @@ Order details:
       setCheckoutName('')
       setCheckoutEmail('')
       setCheckoutOrg('')
-      
+
       window.location.hash = '#/purchase-success'
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
@@ -485,7 +496,7 @@ Organization: ${freeOrg || 'None'}`
           setArqStatus('dropped')
           setArqWillDrop(false)
           setArqLogs(logs => [...logs, `[ARQ] ⚠ Packet Collision / Link Drop at 50% link distance. Frame #${arqSeqNum} lost.`])
-          
+
           // Timeout trigger
           setTimeout(() => {
             setArqLogs(logs => [...logs, `[ARQ] Timer Expired (3000ms)! No ACK received. Retransmitting.`])
@@ -611,7 +622,7 @@ Organization: ${freeOrg || 'None'}`
     if (tcpPhase === 'Slow Start') {
       nextCwnd = Math.min(64, tcpCwnd * 2)
       setTcpLogs(prev => [...prev, `[TCP] Slow Start: Doubling CWND to ${nextCwnd} (ssthresh: ${tcpSsthresh}).`])
-      
+
       if (nextCwnd >= tcpSsthresh) {
         nextPhase = 'Congestion Avoidance'
         setTcpLogs(prev => [...prev, `[TCP] CWND reached ssthresh (${tcpSsthresh}). Switching to Congestion Avoidance (linear growth).`])
@@ -636,14 +647,14 @@ Organization: ${freeOrg || 'None'}`
       nextCwnd = 1
       nextPhase = 'Slow Start'
       setTcpLogs(prev => [
-        ...prev, 
+        ...prev,
         `[TCP] ☠ Timeout detected! Retransmission timer expired. Setting ssthresh = ${nextSsthresh}, resetting CWND = 1.`
       ])
     } else {
       nextCwnd = nextSsthresh
       nextPhase = 'Congestion Avoidance'
       setTcpLogs(prev => [
-        ...prev, 
+        ...prev,
         `[TCP] ⚠ Triple Duplicate ACKs detected (fast loss). Halving CWND to ${nextCwnd}, setting ssthresh = ${nextSsthresh}.`
       ])
     }
@@ -822,13 +833,13 @@ Organization: ${freeOrg || 'None'}`
           <div className="feature-icon-wrapper" style={{ margin: '0 auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-green)', color: 'var(--accent-green)', background: 'rgba(166, 227, 161, 0.1)', boxShadow: '0 0 20px rgba(166, 227, 161, 0.2)' }}>
             <Check size={32} />
           </div>
-          
+
           <span className="badge badge-green" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Purchase Successful</span>
-          
+
           <h1 className="purchase-success-title" style={{ margin: '0', fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #fff 0%, var(--text-dim) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Thank you for purchasing Frissco SimLab
           </h1>
-          
+
           <p className="purchase-success-copy" style={{ fontSize: '1.15rem', lineHeight: '1.6', color: 'var(--text-primary)', maxWidth: '600px', margin: '0 auto' }}>
             You will get your download through your mail within <strong>24 Hours</strong>.
           </p>
@@ -876,47 +887,47 @@ Organization: ${freeOrg || 'None'}`
 
               <div className="form-group">
                 <label htmlFor="succName">Full Name</label>
-                <input 
-                  type="text" 
-                  id="succName" 
-                  required 
-                  value={successName} 
-                  onChange={(e) => setSuccessName(e.target.value)} 
-                  className="form-input" 
+                <input
+                  type="text"
+                  id="succName"
+                  required
+                  value={successName}
+                  onChange={(e) => setSuccessName(e.target.value)}
+                  className="form-input"
                   placeholder="e.g. Sidharth"
                 />
               </div>
               <div className="form-group">
                 <label htmlFor="succEmail">Email Address (for License Delivery)</label>
-                <input 
-                  type="email" 
-                  id="succEmail" 
-                  required 
-                  value={successEmail} 
-                  onChange={(e) => setSuccessEmail(e.target.value)} 
-                  className="form-input" 
+                <input
+                  type="email"
+                  id="succEmail"
+                  required
+                  value={successEmail}
+                  onChange={(e) => setSuccessEmail(e.target.value)}
+                  className="form-input"
                   placeholder="e.g. sid@example.com"
                 />
               </div>
               <div className="form-group">
                 <label htmlFor="succOrg">Organization / University (Optional)</label>
-                <input 
-                  type="text" 
-                  id="succOrg" 
-                  value={successOrg} 
-                  onChange={(e) => setSuccessOrg(e.target.value)} 
-                  className="form-input" 
+                <input
+                  type="text"
+                  id="succOrg"
+                  value={successOrg}
+                  onChange={(e) => setSuccessOrg(e.target.value)}
+                  className="form-input"
                   placeholder="e.g. Stanford University"
                 />
               </div>
               <div className="form-group">
                 <label htmlFor="succPayment">Razorpay Payment ID / Order ID (Optional)</label>
-                <input 
-                  type="text" 
-                  id="succPayment" 
-                  value={successPaymentId} 
-                  onChange={(e) => setSuccessPaymentId(e.target.value)} 
-                  className="form-input" 
+                <input
+                  type="text"
+                  id="succPayment"
+                  value={successPaymentId}
+                  onChange={(e) => setSuccessPaymentId(e.target.value)}
+                  className="form-input"
                   placeholder="e.g. pay_Nxxxxx"
                 />
               </div>
@@ -960,6 +971,90 @@ Organization: ${freeOrg || 'None'}`
     )
   }
 
+  if (purchaseView === 'privacy-policy') {
+    return (
+      <section className="container legal-page" style={{ padding: '80px 24px', maxWidth: '800px', margin: '0 auto' }}>
+        <div className="card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <h1 style={{ fontSize: '2.2rem', marginBottom: '8px' }}>Privacy Policy</h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Last updated: June 27, 2026</p>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--surface-0)' }} />
+
+          <p>
+            Frissco Digital Ventures. ("we", "us", or "our") respects your privacy. This Privacy Policy describes how we handle information in connection with the Frissco SimLab proprietary desktop software applications and services.
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>1. Information We Collect</h3>
+          <p>
+            Frissco SimLab operates locally on your computer workstation. We collect minimal registration details (such as Name, Email Address, and Organization name) to generate cryptographically signed RSA license keys and activate the software. We do not inspect, upload, or store your network topologies, packet traces, or test diagnostics.
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>2. Licensing and Activation</h3>
+          <p>
+            The software performs local cryptographic verification of your license key. We monitor license key usage and basic telemetry metadata (system hash, licensing status) to prevent software piracy, clock rollbacks, and license terms violation. No personal design logs or runtime data are collected during this audit check.
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>3. Third-Party Services</h3>
+          <p>
+            We process payments securely through Razorpay. We do not store credit card numbers or financial details on our systems. We collect contact requests and product download registrations via Web3Forms.
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>4. Changes to This Policy</h3>
+          <p>
+            We reserve the right to modify this Privacy Policy at any time. Changes take effect immediately upon posting to this website.
+          </p>
+
+          <div style={{ marginTop: '24px', display: 'flex', gap: '16px' }}>
+            <a href="#" className="btn btn-primary">Back to Home</a>
+            <a href="#/terms-of-use" className="btn btn-outline">Terms of Use</a>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (purchaseView === 'terms-of-use') {
+    return (
+      <section className="container legal-page" style={{ padding: '80px 24px', maxWidth: '800px', margin: '0 auto' }}>
+        <div className="card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <h1 style={{ fontSize: '2.2rem', marginBottom: '8px' }}>Terms of Use</h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Last updated: June 27, 2026</p>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--surface-0)' }} />
+
+          <p>
+            Please read these Terms of Use ("Terms") carefully before downloading or using the proprietary software product Frissco SimLab (the "Software").
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>1. Proprietary Software License Grant</h3>
+          <p>
+            Frissco SimLab is licensed, not sold. Subject to compliance with these Terms, Frissco Digital Ventures. grants you a non-exclusive, non-transferable, limited license to install and run the Software locally on authorized personal computer workstations in accordance with your purchased plan (Free or Individual License).
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>2. License Restrictions</h3>
+          <p>
+            You agree not to, and will not permit others to: decompile, reverse engineer, disassemble, decrypt, modify, rent, lease, lend, redistribute, or sublicense the Software, or bypass any cryptographic licensing protection systems, clock checks, activation procedures, or obfuscation layers (such as PyArmor protections).
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>3. Anti-Tampering & Clock Rollback Auditing</h3>
+          <p>
+            The Software incorporates automated integrity audit telemetry. Detection of system clock tampering, backdating, or structural modifications to activation files will result in immediate automatic lockout of the license without refund liability.
+          </p>
+
+          <h3 style={{ fontSize: '1.25rem', marginTop: '12px' }}>4. Disclaimer of Warranties & Limitation of Liability</h3>
+          <p>
+            The Software is provided "AS IS", without warranties of any kind. Frissco Digital Ventures. shall not be liable for any direct, indirect, special, incidental, or consequential damages resulting from simulator stress tests, emulation runtime configurations, or failure of network simulations.
+          </p>
+
+          <div style={{ marginTop: '24px', display: 'flex', gap: '16px' }}>
+            <a href="#" className="btn btn-primary">Back to Home</a>
+            <a href="#/privacy-policy" className="btn btn-outline">Privacy Policy</a>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <>
       {/* 1. Header Navigation */}
@@ -974,7 +1069,7 @@ Organization: ${freeOrg || 'None'}`
               <li><a href="#features">Features</a></li>
               <li><a href="#pricing">Pricing</a></li>
               <li><a href="#contact">Contact</a></li>
-              <li><button onClick={() => setDownloadModalOpen(true)} className="btn btn-primary btn-sm" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Download CLI</button></li>
+              <li><a href="https://github.com/Sidharth-Prabhu/SimLab-Website/releases/" className="btn btn-primary btn-sm" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Download</a></li>
             </ul>
           </nav>
         </div>
@@ -986,12 +1081,6 @@ Organization: ${freeOrg || 'None'}`
       {/* 2. Hero Section */}
       <section className="hero-section-wrapper" id="hero">
         <div className="hero-left">
-          <div className="hero-eyebrow">
-            <span className="badge badge-lavender hero-badge-pulse">
-              <span className="hero-badge-dot"></span>
-              Version 1.0.0 — Now Available
-            </span>
-          </div>
 
           <h1 className="hero-title">
             Simulate Networks.<br />
@@ -1035,32 +1124,32 @@ Organization: ${freeOrg || 'None'}`
             <svg className="hero-network-svg" viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Connection lines */}
               <line x1="240" y1="200" x2="120" y2="100" stroke="rgba(180,190,254,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" />
-              <line x1="240" y1="200" x2="360" y2="100" stroke="rgba(180,190,254,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{animationDelay: '0.5s'}} />
-              <line x1="240" y1="200" x2="80" y2="280" stroke="rgba(137,180,250,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{animationDelay: '1s'}} />
-              <line x1="240" y1="200" x2="400" y2="290" stroke="rgba(137,180,250,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{animationDelay: '1.5s'}} />
-              <line x1="240" y1="200" x2="240" y2="60" stroke="rgba(203,166,247,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{animationDelay: '0.3s'}} />
-              <line x1="120" y1="100" x2="80" y2="280" stroke="rgba(180,190,254,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{animationDelay: '0.7s'}} />
-              <line x1="360" y1="100" x2="400" y2="290" stroke="rgba(180,190,254,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{animationDelay: '1.2s'}} />
-              <line x1="80" y1="280" x2="240" y2="350" stroke="rgba(137,180,250,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{animationDelay: '0.9s'}} />
-              <line x1="400" y1="290" x2="240" y2="350" stroke="rgba(137,180,250,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{animationDelay: '1.7s'}} />
+              <line x1="240" y1="200" x2="360" y2="100" stroke="rgba(180,190,254,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{ animationDelay: '0.5s' }} />
+              <line x1="240" y1="200" x2="80" y2="280" stroke="rgba(137,180,250,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{ animationDelay: '1s' }} />
+              <line x1="240" y1="200" x2="400" y2="290" stroke="rgba(137,180,250,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{ animationDelay: '1.5s' }} />
+              <line x1="240" y1="200" x2="240" y2="60" stroke="rgba(203,166,247,0.15)" strokeWidth="1.5" strokeDasharray="6 4" className="hero-net-link" style={{ animationDelay: '0.3s' }} />
+              <line x1="120" y1="100" x2="80" y2="280" stroke="rgba(180,190,254,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{ animationDelay: '0.7s' }} />
+              <line x1="360" y1="100" x2="400" y2="290" stroke="rgba(180,190,254,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{ animationDelay: '1.2s' }} />
+              <line x1="80" y1="280" x2="240" y2="350" stroke="rgba(137,180,250,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{ animationDelay: '0.9s' }} />
+              <line x1="400" y1="290" x2="240" y2="350" stroke="rgba(137,180,250,0.1)" strokeWidth="1" strokeDasharray="4 6" className="hero-net-link" style={{ animationDelay: '1.7s' }} />
 
               {/* Outer nodes */}
               <circle cx="120" cy="100" r="10" fill="rgba(180,190,254,0.12)" stroke="rgba(180,190,254,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" />
               <circle cx="120" cy="100" r="4" fill="var(--accent-lavender)" />
 
-              <circle cx="360" cy="100" r="10" fill="rgba(137,180,250,0.12)" stroke="rgba(137,180,250,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{animationDelay: '0.4s'}} />
+              <circle cx="360" cy="100" r="10" fill="rgba(137,180,250,0.12)" stroke="rgba(137,180,250,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{ animationDelay: '0.4s' }} />
               <circle cx="360" cy="100" r="4" fill="var(--accent-blue)" />
 
-              <circle cx="80" cy="280" r="10" fill="rgba(203,166,247,0.12)" stroke="rgba(203,166,247,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{animationDelay: '0.8s'}} />
+              <circle cx="80" cy="280" r="10" fill="rgba(203,166,247,0.12)" stroke="rgba(203,166,247,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{ animationDelay: '0.8s' }} />
               <circle cx="80" cy="280" r="4" fill="var(--accent-mauve)" />
 
-              <circle cx="400" cy="290" r="10" fill="rgba(180,190,254,0.12)" stroke="rgba(180,190,254,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{animationDelay: '1.2s'}} />
+              <circle cx="400" cy="290" r="10" fill="rgba(180,190,254,0.12)" stroke="rgba(180,190,254,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{ animationDelay: '1.2s' }} />
               <circle cx="400" cy="290" r="4" fill="var(--accent-lavender)" />
 
-              <circle cx="240" cy="60" r="8" fill="rgba(166,227,161,0.12)" stroke="rgba(166,227,161,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{animationDelay: '1.6s'}} />
+              <circle cx="240" cy="60" r="8" fill="rgba(166,227,161,0.12)" stroke="rgba(166,227,161,0.4)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{ animationDelay: '1.6s' }} />
               <circle cx="240" cy="60" r="3" fill="var(--accent-green)" />
 
-              <circle cx="240" cy="350" r="8" fill="rgba(250,179,135,0.12)" stroke="rgba(250,179,135,0.35)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{animationDelay: '2s'}} />
+              <circle cx="240" cy="350" r="8" fill="rgba(250,179,135,0.12)" stroke="rgba(250,179,135,0.35)" strokeWidth="1.5" className="hero-node hero-node-pulse" style={{ animationDelay: '2s' }} />
               <circle cx="240" cy="350" r="3" fill="var(--accent-peach)" />
 
               {/* Centre hub ring */}
@@ -1286,7 +1375,7 @@ Organization: ${freeOrg || 'None'}`
               <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>
                 Best for self-learning, research, demos, and single-user network simulation workstations.
               </p>
-              
+
               <div className="price-box">
                 <span className="price-num">{regionalPricing.amount}</span>
                 <span className="price-period">/ {regionalPricing.suffix}</span>
@@ -1301,9 +1390,9 @@ Organization: ${freeOrg || 'None'}`
               </ul>
             </div>
 
-            <a 
-              href="https://rzp.io/rzp/LwDNO41" 
-              className="btn btn-secondary" 
+            <a
+              href="https://rzp.io/rzp/LwDNO41"
+              className="btn btn-secondary"
               style={{ width: '100%', textAlign: 'center' }}
             >
               Buy Individual License
@@ -1317,7 +1406,7 @@ Organization: ${freeOrg || 'None'}`
               <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>
                 For classrooms, labs, departments, and organizations that need multi-user licensing, onboarding, or custom support.
               </p>
-              
+
               <div className="price-box">
                 <span className="price-num">Contact Sales</span>
               </div>
@@ -1365,51 +1454,51 @@ Organization: ${freeOrg || 'None'}`
           <form onSubmit={handleContactSubmit} className="contact-form">
             <div className="form-group">
               <label htmlFor="name">Full Name</label>
-              <input 
-                type="text" 
-                id="name" 
-                required 
-                value={contactForm.name} 
-                onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} 
-                className="form-input" 
+              <input
+                type="text"
+                id="name"
+                required
+                value={contactForm.name}
+                onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                className="form-input"
                 placeholder="Dr. Evelyn Vance"
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
-              <input 
-                type="email" 
-                id="email" 
-                required 
-                value={contactForm.email} 
-                onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} 
-                className="form-input" 
+              <input
+                type="email"
+                id="email"
+                required
+                value={contactForm.email}
+                onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                className="form-input"
                 placeholder="evance@university.edu"
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="org">Organization</label>
-              <input 
-                type="text" 
-                id="org" 
-                value={contactForm.org} 
-                onChange={(e) => setContactForm({ ...contactForm, org: e.target.value })} 
-                className="form-input" 
+              <input
+                type="text"
+                id="org"
+                value={contactForm.org}
+                onChange={(e) => setContactForm({ ...contactForm, org: e.target.value })}
+                className="form-input"
                 placeholder="Stanford University"
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="message">Inquiry Details</label>
-              <textarea 
-                id="message" 
-                required 
-                rows={4} 
-                value={contactForm.message} 
-                onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} 
-                className="form-textarea" 
+              <textarea
+                id="message"
+                required
+                rows={4}
+                value={contactForm.message}
+                onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                className="form-textarea"
                 placeholder="We would like to request a 14-day evaluation license of the hybrid emulating software for our lab class..."
               ></textarea>
             </div>
@@ -1440,30 +1529,19 @@ Organization: ${freeOrg || 'None'}`
             </div>
 
             <div className="footer-column">
-              <h4>Documentation</h4>
-              <ul>
-                <li><a href="https://simlab.frissco.net" target="_blank" rel="noopener noreferrer">Official Site <ExternalLink size={12} style={{ display: 'inline', marginLeft: '2px' }} /></a></li>
-                <li><a href="#audience">Overview</a></li>
-                <li><a href="#labs">Integrated Laboratories</a></li>
-                <li><a href="#security">Anti-Tampering Telemetry</a></li>
-              </ul>
-            </div>
-
-            <div className="footer-column">
               <h4>Support & Contact</h4>
               <ul>
                 <li><a href="mailto:thefrisscoteamofficial@gmail.com">thefrisscoteamofficial@gmail.com</a></li>
-                <li><a href="mailto:sales@frissco.net">sales@frissco.net</a></li>
-                <li><a href="https://simlab.frissco.net/support">Help Desk</a></li>
+                <li><a href="mailto:thefrisscoteamofficial@gmail.com">Help Desk</a></li>
               </ul>
             </div>
           </div>
 
           <div className="footer-bottom">
-            <span>© 2026 Frissco Inc. All rights reserved. Intellectual property protections apply.</span>
+            <span>© 2026 Frissco Digital Ventures. All rights reserved. Intellectual property protections apply.</span>
             <div style={{ display: 'flex', gap: '20px' }}>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms of Use</a>
+              <a href="#/privacy-policy">Privacy Policy</a>
+              <a href="#/terms-of-use">Terms of Use</a>
             </div>
           </div>
         </div>
@@ -1476,7 +1554,7 @@ Organization: ${freeOrg || 'None'}`
             <button className="modal-close" onClick={() => setDownloadModalOpen(false)}>
               <X size={20} />
             </button>
-            
+
             <span className="badge badge-lavender" style={{ marginBottom: '12px' }}>Download Terminal Bundle</span>
             <h3 style={{ marginBottom: '16px' }}>Installing Frissco SimLab</h3>
             <p style={{ fontSize: '0.95rem', marginBottom: '24px', color: 'var(--text-muted)' }}>
@@ -1487,8 +1565,8 @@ Organization: ${freeOrg || 'None'}`
               {/* Option 1: Standard installation */}
               <div className="install-comment"># Option A: Standard User Mode installation (Recommended)</div>
               <div className="install-terminal">
-                <button 
-                  onClick={() => copyToClipboard('./install.sh', 'std')} 
+                <button
+                  onClick={() => copyToClipboard('./install.sh', 'std')}
                   className="copy-btn"
                 >
                   {copiedText === 'std' ? <Check size={16} /> : <Copy size={16} />}
@@ -1499,8 +1577,8 @@ Organization: ${freeOrg || 'None'}`
               {/* Option 2: System-wide installation */}
               <div className="install-comment" style={{ marginTop: '20px' }}># Option B: System-wide installation (Requires privileges)</div>
               <div className="install-terminal">
-                <button 
-                  onClick={() => copyToClipboard('sudo ./install.sh', 'sys')} 
+                <button
+                  onClick={() => copyToClipboard('sudo ./install.sh', 'sys')}
                   className="copy-btn"
                 >
                   {copiedText === 'sys' ? <Check size={16} /> : <Copy size={16} />}
@@ -1511,8 +1589,8 @@ Organization: ${freeOrg || 'None'}`
               {/* Option 3: Automated installation */}
               <div className="install-comment" style={{ marginTop: '20px' }}># Option C: Fully automated non-interactive install</div>
               <div className="install-terminal">
-                <button 
-                  onClick={() => copyToClipboard('./install.sh --yes', 'auto')} 
+                <button
+                  onClick={() => copyToClipboard('./install.sh --yes', 'auto')}
                   className="copy-btn"
                 >
                   {copiedText === 'auto' ? <Check size={16} /> : <Copy size={16} />}
@@ -1550,47 +1628,47 @@ Organization: ${freeOrg || 'None'}`
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="form-group">
                   <label htmlFor="chkName">Full Name</label>
-                  <input 
-                    type="text" 
-                    id="chkName" 
-                    required 
-                    value={checkoutName} 
-                    onChange={(e) => setCheckoutName(e.target.value)} 
-                    className="form-input" 
+                  <input
+                    type="text"
+                    id="chkName"
+                    required
+                    value={checkoutName}
+                    onChange={(e) => setCheckoutName(e.target.value)}
+                    className="form-input"
                     placeholder="e.g. Sidharth"
                   />
                 </div>
                 <div className="form-group">
                   <label htmlFor="chkEmail">Email Address</label>
-                  <input 
-                    type="email" 
-                    id="chkEmail" 
-                    required 
-                    value={checkoutEmail} 
-                    onChange={(e) => setCheckoutEmail(e.target.value)} 
-                    className="form-input" 
+                  <input
+                    type="email"
+                    id="chkEmail"
+                    required
+                    value={checkoutEmail}
+                    onChange={(e) => setCheckoutEmail(e.target.value)}
+                    className="form-input"
                     placeholder="e.g. sid@example.com"
                   />
                 </div>
                 <div className="form-group">
                   <label htmlFor="chkOrg">Organization / University (Optional)</label>
-                  <input 
-                    type="text" 
-                    id="chkOrg" 
-                    value={checkoutOrg} 
-                    onChange={(e) => setCheckoutOrg(e.target.value)} 
-                    className="form-input" 
+                  <input
+                    type="text"
+                    id="chkOrg"
+                    value={checkoutOrg}
+                    onChange={(e) => setCheckoutOrg(e.target.value)}
+                    className="form-input"
                     placeholder="e.g. Stanford University"
                   />
                 </div>
 
                 <div style={{
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '12px 16px', 
-                  background: 'rgba(255, 255, 255, 0.02)', 
-                  border: '1px solid var(--surface-0)', 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--surface-0)',
                   borderRadius: '10px',
                   marginTop: '4px'
                 }}>
@@ -1633,36 +1711,36 @@ Organization: ${freeOrg || 'None'}`
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="form-group">
                   <label htmlFor="freeName">Full Name</label>
-                  <input 
-                    type="text" 
-                    id="freeName" 
-                    required 
-                    value={freeName} 
-                    onChange={(e) => setFreeName(e.target.value)} 
-                    className="form-input" 
+                  <input
+                    type="text"
+                    id="freeName"
+                    required
+                    value={freeName}
+                    onChange={(e) => setFreeName(e.target.value)}
+                    className="form-input"
                     placeholder="e.g. Sidharth"
                   />
                 </div>
                 <div className="form-group">
                   <label htmlFor="freeEmail">Email Address</label>
-                  <input 
-                    type="email" 
-                    id="freeEmail" 
-                    required 
-                    value={freeEmail} 
-                    onChange={(e) => setFreeEmail(e.target.value)} 
-                    className="form-input" 
+                  <input
+                    type="email"
+                    id="freeEmail"
+                    required
+                    value={freeEmail}
+                    onChange={(e) => setFreeEmail(e.target.value)}
+                    className="form-input"
                     placeholder="e.g. sid@example.com"
                   />
                 </div>
                 <div className="form-group">
                   <label htmlFor="freeOrg">Organization / University (Optional)</label>
-                  <input 
-                    type="text" 
-                    id="freeOrg" 
-                    value={freeOrg} 
-                    onChange={(e) => setFreeOrg(e.target.value)} 
-                    className="form-input" 
+                  <input
+                    type="text"
+                    id="freeOrg"
+                    value={freeOrg}
+                    onChange={(e) => setFreeOrg(e.target.value)}
+                    className="form-input"
                     placeholder="e.g. Stanford University"
                   />
                 </div>

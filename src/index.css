@@ -1,33 +1,33 @@
 :root {
-  /* Catppuccin Mocha Theme Colors */
-  --bg-crust: #11111b;
-  --bg-mantle: #181825;
-  --bg-base: #1e1e2e;
-  --surface-0: #313244;
-  --surface-1: #45475a;
-  --surface-2: #585b70;
+  /* Premium Slate/Obsidian Tech Theme */
+  --bg-crust: #070a13;
+  --bg-mantle: #0f172a;
+  --bg-base: #1e293b;
+  --surface-0: #1e293b;
+  --surface-1: #334155;
+  --surface-2: #475569;
   
-  --text-primary: #cdd6f4;
+  --text-primary: #f1f5f9;
   --text-heading: #ffffff;
-  --text-muted: #a6adc8;
-  --text-dim: #7f849c;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
 
   /* Accents */
-  --accent-lavender: #b4befe;
-  --accent-mauve: #cba6f7;
-  --accent-blue: #89b4fa;
-  --accent-peach: #fab387;
-  --accent-green: #a6e3a1;
-  --accent-red: #f38ba8;
-  --accent-yellow: #f9e2af;
+  --accent-lavender: #a5b4fc;
+  --accent-mauve: #c084fc;
+  --accent-blue: #60a5fa;
+  --accent-peach: #f59e0b;
+  --accent-green: #34d399;
+  --accent-red: #f87171;
+  --accent-yellow: #fbbf24;
 
   /* Custom Glows & Shadows */
-  --glow-lavender: rgba(180, 190, 254, 0.15);
-  --glow-blue: rgba(137, 180, 250, 0.15);
-  --glow-mauve: rgba(203, 166, 247, 0.15);
-  --glow-red: rgba(243, 139, 168, 0.15);
-  --glow-green: rgba(166, 227, 161, 0.15);
-  --glow-peach: rgba(250, 179, 135, 0.15);
+  --glow-lavender: rgba(165, 180, 252, 0.08);
+  --glow-blue: rgba(96, 165, 250, 0.08);
+  --glow-mauve: rgba(192, 132, 252, 0.08);
+  --glow-red: rgba(248, 113, 113, 0.08);
+  --glow-green: rgba(52, 211, 153, 0.08);
+  --glow-peach: rgba(245, 158, 11, 0.08);
   
   --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 10px 25px -10px rgba(0, 0, 0, 0.4);
@@ -68,8 +68,8 @@ body::before {
   right: 0;
   bottom: 0;
   background-image: 
-    linear-gradient(rgba(180, 190, 254, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(180, 190, 254, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(165, 180, 252, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(165, 180, 252, 0.015) 1px, transparent 1px);
   background-size: 40px 40px;
   background-position: center top;
   pointer-events: none;
@@ -84,7 +84,7 @@ body::after {
   left: 10%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(203, 166, 247, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(165, 180, 252, 0.03) 0%, transparent 70%);
   filter: blur(80px);
   pointer-events: none;
   z-index: -1;
@@ -96,7 +96,7 @@ body::after {
   right: 5%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(137, 180, 250, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.02) 0%, transparent 70%);
   filter: blur(100px);
   pointer-events: none;
   z-index: -1;
