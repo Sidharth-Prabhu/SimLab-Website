@@ -510,17 +510,18 @@ section + section {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0.48;
-  transform: scale(1.04);
+  object-fit: contain;
+  opacity: 1;
+  padding: 24px;
+  box-sizing: border-box;
+  z-index: 1;
 }
 
 .feature-showcase-overlay {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(17, 17, 27, 0.06), rgba(17, 17, 27, 0.82)),
-    linear-gradient(120deg, rgba(137, 180, 250, 0.12), transparent 40%, rgba(203, 166, 247, 0.16));
+  background: radial-gradient(circle at center, rgba(180, 190, 254, 0.05) 0%, transparent 80%);
+  z-index: 0;
 }
 
 .feature-showcase-topbar {

@@ -29,6 +29,19 @@ import frisscoSimlabLogo from './assets/frissco_simlab.png'
 import heroImage from './assets/hero.png'
 import './App.css'
 
+import ss1 from './assets/screenshots/1.png'
+import ss2 from './assets/screenshots/2.png'
+import ss3 from './assets/screenshots/3.png'
+import ss4 from './assets/screenshots/4.png'
+import ss5 from './assets/screenshots/5.png'
+import ss6 from './assets/screenshots/6.png'
+import ss7 from './assets/screenshots/7.png'
+import ss8 from './assets/screenshots/8.png'
+import ss9 from './assets/screenshots/9.png'
+import ss10 from './assets/screenshots/10.png'
+
+const featureImages = [ss1, ss2, ss3, ss4, ss5, ss6, ss7, ss8, ss9, ss10]
+
 const featureGroups = [
   {
     title: 'Interactive Topology Canvas Editor',
@@ -182,7 +195,7 @@ function App() {
   const [regionalPricing, setRegionalPricing] = useState(getRegionalPricing)
   const [activeFeature, setActiveFeature] = useState(0)
   const [purchaseView, setPurchaseView] = useState<PurchaseView>(() =>
-    window.location.hash.startsWith('#/purchase-success') ? 'purchase-success' : 'landing'
+    (window.location.hash.startsWith('#/purchase-success') || window.location.hash.startsWith('#/payment-success')) ? 'purchase-success' : 'landing'
   )
   // Checkout Modal states
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false)
@@ -191,6 +204,15 @@ function App() {
   const [checkoutOrg, setCheckoutOrg] = useState('')
   const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
+
+  // Success Form states
+  const [successName, setSuccessName] = useState('')
+  const [successEmail, setSuccessEmail] = useState('')
+  const [successOrg, setSuccessOrg] = useState('')
+  const [successPaymentId, setSuccessPaymentId] = useState('')
+  const [isSubmittingSuccessForm, setIsSubmittingSuccessForm] = useState(false)
+  const [successFormSubmitted, setSuccessFormSubmitted] = useState(false)
+  const [successFormError, setSuccessFormError] = useState('')
 
 
 
@@ -268,7 +290,9 @@ function App() {
 
   useEffect(() => {
     const handleHashChange = () => {
-      setPurchaseView(window.location.hash.startsWith('#/purchase-success') ? 'purchase-success' : 'landing')
+      setPurchaseView(
+        (window.location.hash.startsWith('#/purchase-success') || window.location.hash.startsWith('#/payment-success')) ? 'purchase-success' : 'landing'
+      )
     }
 
     window.addEventListener('hashchange', handleHashChange)
@@ -324,6 +348,56 @@ Order details:
       setCheckoutError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
     } finally {
       setIsSubmittingCheckout(false)
+    }
+  }
+
+  const handleSuccessFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!successName.trim() || !successEmail.trim()) {
+      setSuccessFormError('Name and Email are required.')
+      return
+    }
+    setSuccessFormError('')
+    setIsSubmittingSuccessForm(true)
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: web3FormsAccessKey,
+          subject: `[SimLab Paid Customer] Details Form - ${successName}`,
+          from_name: 'SimLab Paid Customer Registration',
+          name: successName,
+          email: successEmail,
+          message: `Hello! A paid customer has submitted their info for license delivery.
+
+Customer Name: ${successName}
+Customer Email: ${successEmail}
+Organization: ${successOrg || 'None'}
+Payment/Order ID: ${successPaymentId || 'None'}
+
+Please issue the license key and send the download link to ${successEmail}.`
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Unable to submit details. Please try again.')
+      }
+
+      setSuccessFormSubmitted(true)
+      setSuccessName('')
+      setSuccessEmail('')
+      setSuccessOrg('')
+      setSuccessPaymentId('')
+    } catch (err) {
+      setSuccessFormError(err instanceof Error ? err.message : 'Submission failed. Please try again.')
+    } finally {
+      setIsSubmittingSuccessForm(false)
     }
   }
 
@@ -703,6 +777,104 @@ Order details:
             You will get your download through your mail within <strong>24 Hours</strong>.
           </p>
 
+          {successFormSubmitted ? (
+            <div style={{
+              width: '100%',
+              maxWidth: '500px',
+              margin: '20px auto 0',
+              padding: '24px',
+              borderRadius: '16px',
+              border: '1px solid var(--accent-green)',
+              background: 'rgba(166, 227, 161, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <Check size={24} style={{ color: 'var(--accent-green)' }} />
+              <h3 style={{ margin: '0', fontSize: '1.25rem', color: 'var(--text-heading)' }}>Details Submitted!</h3>
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-dim)', margin: '0', textAlign: 'center' }}>
+                We have received your details and will process your license shortly.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSuccessFormSubmit} style={{
+              width: '100%',
+              maxWidth: '500px',
+              margin: '20px auto 0',
+              padding: '28px',
+              borderRadius: '16px',
+              border: '1px solid var(--surface-0)',
+              background: 'rgba(255, 255, 255, 0.02)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              textAlign: 'left'
+            }}>
+              <h3 style={{ fontSize: '1.2rem', margin: '0', color: 'var(--text-heading)', textAlign: 'center' }}>
+                Complete Registration
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 8px', textAlign: 'center' }}>
+                Please provide your details below to activate your individual license.
+              </p>
+
+              <div className="form-group">
+                <label htmlFor="succName">Full Name</label>
+                <input 
+                  type="text" 
+                  id="succName" 
+                  required 
+                  value={successName} 
+                  onChange={(e) => setSuccessName(e.target.value)} 
+                  className="form-input" 
+                  placeholder="e.g. Sidharth"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="succEmail">Email Address (for License Delivery)</label>
+                <input 
+                  type="email" 
+                  id="succEmail" 
+                  required 
+                  value={successEmail} 
+                  onChange={(e) => setSuccessEmail(e.target.value)} 
+                  className="form-input" 
+                  placeholder="e.g. sid@example.com"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="succOrg">Organization / University (Optional)</label>
+                <input 
+                  type="text" 
+                  id="succOrg" 
+                  value={successOrg} 
+                  onChange={(e) => setSuccessOrg(e.target.value)} 
+                  className="form-input" 
+                  placeholder="e.g. Stanford University"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="succPayment">Razorpay Payment ID / Order ID (Optional)</label>
+                <input 
+                  type="text" 
+                  id="succPayment" 
+                  value={successPaymentId} 
+                  onChange={(e) => setSuccessPaymentId(e.target.value)} 
+                  className="form-input" 
+                  placeholder="e.g. pay_Nxxxxx"
+                />
+              </div>
+
+              {successFormError && (
+                <p style={{ color: 'var(--accent-red)', fontSize: '0.85rem', margin: '0' }}>{successFormError}</p>
+              )}
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={isSubmittingSuccessForm}>
+                {isSubmittingSuccessForm ? 'Submitting Details...' : 'Submit Info'}
+              </button>
+            </form>
+          )}
+
           <div style={{
             width: '100%',
             maxWidth: '500px',
@@ -778,10 +950,10 @@ Order details:
           </p>
 
           <div className="hero-actions">
-            <button onClick={() => setDownloadModalOpen(true)} className="btn btn-primary hero-btn-primary">
+            <a href="#pricing" className="btn btn-primary hero-btn-primary">
               <Download size={18} />
               Get Started — Free
-            </button>
+            </a>
             <a href="#contact" className="btn btn-secondary">
               Request Enterprise License
             </a>
@@ -922,7 +1094,7 @@ Order details:
                   <article key={feature.title} className={`feature-slide accent-${feature.accent}`}>
                     <div className="feature-showcase-visual">
                       <div className="feature-showcase-frame">
-                        <img src={heroImage} alt={feature.title} className="feature-showcase-image" />
+                        <img src={featureImages[index]} alt={feature.title} className="feature-showcase-image" />
                         <div className="feature-showcase-overlay"></div>
 
                         <div className="feature-showcase-topbar">
@@ -1069,15 +1241,13 @@ Order details:
               </ul>
             </div>
 
-            <button onClick={() => {
-              setCheckoutName('')
-              setCheckoutEmail('')
-              setCheckoutOrg('')
-              setCheckoutError('')
-              setCheckoutModalOpen(true)
-            }} className="btn btn-secondary" style={{ width: '100%' }}>
+            <a 
+              href="https://rzp.io/rzp/LwDNO41" 
+              className="btn btn-secondary" 
+              style={{ width: '100%', textAlign: 'center' }}
+            >
               Buy Individual License
-            </button>
+            </a>
           </div>
 
           <div className="card pricing-card">
