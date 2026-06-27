@@ -180,7 +180,7 @@ type IssuedLicense = {
 
 const getRegionalPricing = () => {
   return {
-    amount: `Rs ${individualLicenseInr}`,
+    amount: `₹${individualLicenseInr}`,
     suffix: 'one-time license',
     note: 'Flat rate in INR for all customers worldwide.',
     isIndia: true,
@@ -1344,7 +1344,7 @@ Organization: ${freeOrg || 'None'}`
               </p>
 
               <div className="price-box">
-                <span className="price-num">$0</span>
+                <span className="price-num">₹0</span>
                 <span className="price-period">/ forever</span>
               </div>
               <p className="pricing-note">Best for trying the basics before moving into advanced labs and analysis.</p>
