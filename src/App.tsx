@@ -22,7 +22,8 @@ import {
   CreditCard,
   QrCode,
   Building,
-  Loader2
+  Loader2,
+  Menu
 } from 'lucide-react'
 import simlabLogo from './assets/simlab.png'
 import frisscoSimlabLogo from './assets/frissco_simlab.png'
@@ -190,6 +191,7 @@ const getRegionalPricing = () => {
 
 function App() {
   // Navigation & Modals
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [downloadModalOpen, setDownloadModalOpen] = useState(false)
   const [copiedText, setCopiedText] = useState('')
   const [regionalPricing, setRegionalPricing] = useState(getRegionalPricing)
@@ -1060,20 +1062,31 @@ Organization: ${freeOrg || 'None'}`
       {/* 1. Header Navigation */}
       <header className="nav-header">
         <div className="container nav-container">
-          <a href="#" className="brand">
+          <a href="#" className="brand" onClick={() => setMobileMenuOpen(false)}>
             <img src={frisscoSimlabLogo} alt="Frissco SimLab" style={{ height: '36px' }} />
           </a>
           <nav>
-            <ul className="nav-links">
-              <li><a href="#audience">Overview</a></li>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#pricing">Pricing</a></li>
-              <li><a href="#contact">Contact</a></li>
-              <li><a href="https://github.com/Sidharth-Prabhu/SimLab-Website/releases/" className="btn btn-primary btn-sm" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Download</a></li>
+            <ul className={`nav-links ${mobileMenuOpen ? 'active' : ''}`}>
+              <li><a href="#audience" onClick={() => setMobileMenuOpen(false)}>Overview</a></li>
+              <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
+              <li><a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
+              <li><a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a></li>
+              <li><a href="https://github.com/Sidharth-Prabhu/SimLab-Website/releases/" className="btn btn-primary btn-sm" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => setMobileMenuOpen(false)}>Download</a></li>
             </ul>
           </nav>
+          <button
+            className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </header>
+
+      {mobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}></div>
+      )}
 
       {/* Ambient background decorative elements */}
       <div className="glow-ambient-2"></div>

@@ -48,6 +48,81 @@
   color: var(--accent-lavender);
 }
 
+/* Mobile Menu Toggle button */
+.mobile-menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  z-index: 110;
+  padding: 8px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Mobile Menu Overlay backdrop */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(7, 10, 19, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 102;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background-color: var(--bg-mantle);
+    border-left: 1px solid var(--surface-0);
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 80px 24px 40px;
+    gap: 24px;
+    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-lg);
+    z-index: 105;
+  }
+
+  .nav-links.active {
+    right: 0;
+  }
+
+  .nav-links li {
+    width: 100%;
+  }
+
+  .nav-links a {
+    display: block;
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 8px 0;
+  }
+
+  .nav-links .btn {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    margin-top: 8px;
+  }
+}
+
 /* Sections General */
 section {
   padding: 80px 0;
@@ -697,9 +772,31 @@ section + section {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .feature-rail {
-    grid-template-columns: 1fr;
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    scroll-snap-type: x mandatory;
+    gap: 8px;
+    padding: 8px 4px 12px;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Clean custom scrollbar for horizontal tabs */
+  .feature-rail::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .feature-rail::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .feature-rail::-webkit-scrollbar-thumb {
+    background: var(--surface-0);
+    border-radius: 2px;
   }
 }
 
@@ -716,6 +813,15 @@ section + section {
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .feature-rail-item {
+    flex: 0 0 auto;
+    width: auto;
+    scroll-snap-align: start;
+    padding: 10px 16px;
+  }
 }
 
 .feature-rail-item:hover {
@@ -1887,6 +1993,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 90%;
   box-shadow: var(--shadow-lg);
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
 }
 
 .modal-close {
